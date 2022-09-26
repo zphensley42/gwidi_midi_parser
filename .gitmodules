@@ -1,0 +1,6 @@
+[submodule "midifile"]
+	path = midifile
+	url = https://github.com/zphensley42/midifile.git
+[submodule "spdlog"]
+	path = spdlog
+	url = https://github.com/gabime/spdlog.git
