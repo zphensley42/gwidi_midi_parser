@@ -1,9 +1,7 @@
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include "spdlog/spdlog.h"
 #include "MidiFile.h"
-#include "Options.h"
 #include "GwidiData.h"
 
 GwidiData::GwidiData(const std::vector<Track>& tracks) {
@@ -46,7 +44,28 @@ void GwidiData::addTrack(std::string instrument, std::string track_name, const s
     }
 }
 
-GwidiData* readFile(const char* midiName) {
+void GwidiData::fillTickMap() {
+    tickMap.clear();
+    for(auto i = 0; i < tracks.size(); i++) {
+        auto &t = tracks.at(i);
+        tickMap[i] = std::map<double, std::vector<Note>>();
+        auto &map = tickMap[i];
+        spdlog::debug("fillTickMap  filling notes for track with #{} notes", t.notes.size());
+        for(auto &n : t.notes) {
+            if(map.find(n.start_offset) == map.end()) {
+                spdlog::debug("fillTickMap  start_offset {} not found, adding", n.start_offset);
+                map[n.start_offset] = std::vector<Note>();
+            }
+            map[n.start_offset].emplace_back(Note(n));
+        }
+    }
+}
+
+// TODO: When building gwidi data from midi, we need to determine which octaves to use as our set of octaves that we support
+// TODO: against instruments
+// TODO: Part of this is determining: 1 which instrument we are using to thus determine how many octaves we can support and
+// TODO: 2 determining which midi octaves map to which gwidi octaves
+GwidiData* GwidiMidiParser::readFile(const char* midiName, MidiParseOptions options) {
     auto outData = new GwidiData();
 
     auto printType = [](smf::MidiEvent &evt) {
@@ -113,10 +132,21 @@ GwidiData* readFile(const char* midiName) {
             if(event.isNoteOn()) {
                 std::stringstream eventDetails;
                 spdlog::debug("startSeconds: {}\nnoteOn: {}\nduration: {}\noctave: {}\nnumber: {}\nletter: {}", event.seconds, event.isNoteOn(), event.getDurationInSeconds(), event.getKeyOctave(), event.getKeyNumber(), event.getKeyLetter());
+
+                // determine if we care about this note and what actual octave it should be in our instrument mapping
+                int midiNoteOctave = event.getKeyOctave();
+                auto it = std::find_if(options.midiOctaveChoices.begin(), options.midiOctaveChoices.end(), [midiNoteOctave](std::pair<int, int> entry){
+                    return entry.second == midiNoteOctave;
+                });
+                if(it != options.midiOctaveChoices.end()) {
+                    // Note should be used (but use the octave it is mapped to instead)
+                    midiNoteOctave = it->first;
+                }
+
                 notes.emplace_back(Note{
                     event.seconds,
                     event.getDurationInSeconds(),
-                    event.getKeyOctave(),
+                    midiNoteOctave,
                     event.getKeyLetter(),
                     "",
                     i
@@ -138,10 +168,41 @@ GwidiData* readFile(const char* midiName) {
         outData->addTrack(instrument, track_name, notes);
     }
 
+    // After filling our data, filter by the octave choices
+    // Move to a member method on data?
+//    auto &tracks = outData->getTracks();
+//    for(auto &track : tracks) {
+//        track.notes.erase(
+//                std::remove_if(track.notes.begin(), track.notes.end(), [&options](const Note& n){
+//                    // true to remove, false to keep
+//                    auto it = std::find(options.midiOctaveChoices.begin(), options.midiOctaveChoices.end(), n.octave);
+//                    return it == options.midiOctaveChoices.end();
+//                }),
+//                track.notes.end()
+//        );
+//    }
+
+    // Assign octave numbers from our chosen instrument to the octaves we have available after filtering
+    // i.e. harp has 0,1,2,3 -> point to the choices given in midi options
+    // TODO: Error cases where midi options don't give the right amounts, maybe just continue picking the next octaves until we run out?
+//    auto &instrumentNotes = InstrumentOptions::notesForInstrument(options.instrument);
+//    auto notesListOctaves = InstrumentOptions::octaveListForNotesList(instrumentNotes);
+//    GwidiData::OctaveMapping mapping;
+//    for(auto i = 0; i < notesListOctaves.size(); i++) {
+//        if(i < options.midiOctaveChoices.size()) {
+//            mapping[notesListOctaves[i]] = options.midiOctaveChoices[i];
+//        }
+//        else {
+//            mapping[notesListOctaves[i]] = -1;
+//        }
+//    }
+
+//    outData->assignOctaveMapping(mapping);
+    outData->fillTickMap();
     return outData;
 }
 
-void GwidiData::writeToFile(std::string filename) {
+void GwidiData::writeToFile(const std::string& filename) {
     std::ofstream out;
     out.open(filename, std::ios::out | std::ios::binary);
     size_t track_count = tracks.size();
@@ -179,7 +240,7 @@ void GwidiData::writeToFile(std::string filename) {
     out.close();
 }
 
-GwidiData *GwidiData::readFromFile(std::string filename) {
+GwidiData *GwidiData::readFromFile(const std::string &filename) {
     auto outData = new GwidiData();
     std::ifstream in;
     in.open(filename, std::ios::in | std::ios::binary);
@@ -253,32 +314,171 @@ GwidiData *GwidiData::readFromFile(std::string filename) {
     }
 
     in.close();
+    outData->fillTickMap();
     return outData;
 }
 
-void testWriteAndRead(GwidiData* in) {
-    in->writeToFile("test_out.gwd");
-    auto readData = GwidiData::readFromFile("test_out.gwd");
 
-    FMT_ASSERT(in->getTempo() == readData->getTempo(), "tempo does not match");
-    FMT_ASSERT(in->getTempoMicro() == readData->getTempoMicro(), "tempoMicro does not match");
 
-    auto &tracks1 = in->getTracks();
-    auto &tracks2 = readData->getTracks();
-    FMT_ASSERT(tracks1.size() == tracks2.size(), "track count does not match");
+const char* InstrumentOptions::nameForInstrument(InstrumentOptions::Instrument in) {
+    static std::unordered_map<Instrument, const char*> instrument_name {
+            {Instrument::HARP, "harp"},
+            {Instrument::FLUTE, "flute"},
+            {Instrument::BELL, "bell"},
+    };
+    auto it = instrument_name.find(in);
+    if(it == instrument_name.end()) {
+        return "";
+    }
+    return it->second;
 }
 
-int main() {
-    spdlog::set_level(spdlog::level::info);
-
-    auto data = readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\pollyanna.mid)");
-    auto& tracks = data->getTracks();
-    for(auto &t : tracks) {
-        spdlog::debug("track: {}, tempo: [{}, {}], instrument: {}, # notes: {}", t.track_name, data->getTempo(), data->getTempoMicro(), t.instrument_name, t.notes.size());
+InstrumentOptions::Instrument InstrumentOptions::enumForInstrument(const char* in) {
+    static std::unordered_map<const char*, Instrument> instrument_enum {
+            {"harp", Instrument::HARP},
+            {"flute", Instrument::FLUTE},
+            {"bell", Instrument::BELL},
+    };
+    auto it = instrument_enum.find(in);
+    if(it == instrument_enum.end()) {
+        return Instrument::UNKNOWN;
     }
+    return it->second;
+}
 
-    testWriteAndRead(data);
 
-    delete data;
-    return 0;
+InstrumentOptions::GwidiInstrumentOctaves InstrumentOptions::empty_GwidiInstrumentOctaves{};
+InstrumentOptions::GwidiInstrumentOctaves& InstrumentOptions::notesForInstrument(Instrument instrument) {
+    static std::unordered_map<Instrument, GwidiInstrumentOctaves> notes_for_instrument {
+            {Instrument::HARP, {
+                                       GwidiInstrumentNote{0, "C", "1"},
+                                       GwidiInstrumentNote{0, "C#", "1"},
+                                       GwidiInstrumentNote{0, "D", "2"},
+                                       GwidiInstrumentNote{0, "D#", "2"},
+                                       GwidiInstrumentNote{0, "E", "3"},
+                                       GwidiInstrumentNote{0, "E#", "3"},
+                                       GwidiInstrumentNote{0, "F", "4"},
+                                       GwidiInstrumentNote{0, "F#", "4"},
+                                       GwidiInstrumentNote{0, "G", "5"},
+                                       GwidiInstrumentNote{0, "G#", "5"},
+                                       GwidiInstrumentNote{0, "A", "6"},
+                                       GwidiInstrumentNote{0, "A#", "6"},
+                                       GwidiInstrumentNote{0, "B", "7"},
+                                       GwidiInstrumentNote{0, "B#", "7"},
+
+                                       GwidiInstrumentNote{1, "C", "1"},
+                                       GwidiInstrumentNote{1, "C#", "1"},
+                                       GwidiInstrumentNote{1, "D", "2"},
+                                       GwidiInstrumentNote{1, "D#", "2"},
+                                       GwidiInstrumentNote{1, "E", "3"},
+                                       GwidiInstrumentNote{1, "E#", "3"},
+                                       GwidiInstrumentNote{1, "F", "4"},
+                                       GwidiInstrumentNote{1, "F#", "4"},
+                                       GwidiInstrumentNote{1, "G", "5"},
+                                       GwidiInstrumentNote{1, "G#", "5"},
+                                       GwidiInstrumentNote{1, "A", "6"},
+                                       GwidiInstrumentNote{1, "A#", "6"},
+                                       GwidiInstrumentNote{1, "B", "7"},
+                                       GwidiInstrumentNote{1, "B#", "7"},
+
+                                       GwidiInstrumentNote{2, "C", "1"},
+                                       GwidiInstrumentNote{2, "C#", "1"},
+                                       GwidiInstrumentNote{2, "D", "2"},
+                                       GwidiInstrumentNote{2, "D#", "2"},
+                                       GwidiInstrumentNote{2, "E", "3"},
+                                       GwidiInstrumentNote{2, "E#", "3"},
+                                       GwidiInstrumentNote{2, "F", "4"},
+                                       GwidiInstrumentNote{2, "F#", "4"},
+                                       GwidiInstrumentNote{2, "G", "5"},
+                                       GwidiInstrumentNote{2, "G#", "5"},
+                                       GwidiInstrumentNote{2, "A", "6"},
+                                       GwidiInstrumentNote{2, "A#", "6"},
+                                       GwidiInstrumentNote{2, "B", "7"},
+                                       GwidiInstrumentNote{2, "B#", "7"},
+
+                                       GwidiInstrumentNote{3, "C", "8"}, // For some reason, GW2 sets up a final octave but only 1 note
+                                       GwidiInstrumentNote{3, "C#", "8"}, // For some reason, GW2 sets up a final octave but only 1 note
+                               }},
+            {Instrument::FLUTE, {
+                                       GwidiInstrumentNote{0, "C", "1"},
+                                       GwidiInstrumentNote{0, "D", "2"},
+                                       GwidiInstrumentNote{0, "E", "3"},
+                                       GwidiInstrumentNote{0, "F", "4"},
+                                       GwidiInstrumentNote{0, "G", "5"},
+                                       GwidiInstrumentNote{0, "A", "6"},
+                                       GwidiInstrumentNote{0, "B", "7"},
+
+                                       GwidiInstrumentNote{1, "C", "1"},
+                                       GwidiInstrumentNote{1, "D", "2"},
+                                       GwidiInstrumentNote{1, "E", "3"},
+                                       GwidiInstrumentNote{1, "F", "4"},
+                                       GwidiInstrumentNote{1, "G", "5"},
+                                       GwidiInstrumentNote{1, "A", "6"},
+                                       GwidiInstrumentNote{1, "B", "7"},
+
+                                       GwidiInstrumentNote{2, "C", "8"}, // For some reason, GW2 sets up a final octave but only 1 note
+                               }},
+            {Instrument::BELL, {
+                                       GwidiInstrumentNote{0, "C", "1"},
+                                       GwidiInstrumentNote{0, "D", "2"},
+                                       GwidiInstrumentNote{0, "E", "3"},
+                                       GwidiInstrumentNote{0, "F", "4"},
+                                       GwidiInstrumentNote{0, "G", "5"},
+                                       GwidiInstrumentNote{0, "A", "6"},
+                                       GwidiInstrumentNote{0, "B", "7"},
+
+                                       GwidiInstrumentNote{1, "C", "1"},
+                                       GwidiInstrumentNote{1, "D", "2"},
+                                       GwidiInstrumentNote{1, "E", "3"},
+                                       GwidiInstrumentNote{1, "F", "4"},
+                                       GwidiInstrumentNote{1, "G", "5"},
+                                       GwidiInstrumentNote{1, "A", "6"},
+                                       GwidiInstrumentNote{1, "B", "7"},
+
+                                       GwidiInstrumentNote{2, "C", "1"},
+                                       GwidiInstrumentNote{2, "D", "2"},
+                                       GwidiInstrumentNote{2, "E", "3"},
+                                       GwidiInstrumentNote{2, "F", "4"},
+                                       GwidiInstrumentNote{2, "G", "5"},
+                                       GwidiInstrumentNote{2, "A", "6"},
+                                       GwidiInstrumentNote{2, "B", "7"},
+
+                                       GwidiInstrumentNote{3, "C", "8"}, // For some reason, GW2 sets up a final octave but only 1 note
+                               }}
+    };
+    auto it = notes_for_instrument.find(instrument);
+    if(it == notes_for_instrument.end()) {
+        return empty_GwidiInstrumentOctaves;
+    }
+    return it->second;
+}
+
+std::vector<int> InstrumentOptions::octaveListForNotesList(GwidiInstrumentOctaves& notesList) {
+    std::map<int, int> c;
+    for(auto &entry : notesList) {
+        if(c.find(entry.octave) == c.end()) {
+            c[entry.octave] = 0;
+        }
+        c[entry.octave]++;
+    }
+    std::vector<int> v;
+    for(auto &entry : c) {
+        v.push_back(entry.first);
+    }
+    return v;
+}
+
+int InstrumentOptions::startingOctaveForInstrument(InstrumentOptions::Instrument instrument) {
+    switch(instrument) {
+        case Instrument::HARP: {
+            return 1;
+        }
+        case Instrument::FLUTE: {
+            return 0;
+        }
+        case Instrument::BELL: {
+            return 1;
+        }
+        default: return 0;
+    }
 }
