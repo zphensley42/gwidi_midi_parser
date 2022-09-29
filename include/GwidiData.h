@@ -6,50 +6,21 @@
 #include <unordered_map>
 #include <map>
 
-struct GwidiInstrumentNote {
-    int octave{0};
-    std::string letter{""};
-    std::string key{""};
-};
-
 struct Note {
     double start_offset {0.0};
     double duration {0.0};
     int octave {0};
-    std::string letter {""};
-    std::string instrument {""};
+    std::string letter {};
+    std::string instrument {};
     int track {0};
+    int instrument_note_number{0};
+    std::string key{};
 };
 
 struct Track {
     std::vector<Note> notes;
     std::string instrument_name;
     std::string track_name;
-};
-
-struct InstrumentOptions {
-    enum Instrument {
-        UNKNOWN = 0,
-        HARP = 1,
-        FLUTE = 2,
-        BELL = 3
-    };
-
-    static const char* nameForInstrument(Instrument in);
-    static Instrument enumForInstrument(const char* in);
-
-    using GwidiInstrumentOctaves = std::vector<GwidiInstrumentNote>;
-    static GwidiInstrumentOctaves empty_GwidiInstrumentOctaves;
-
-    static GwidiInstrumentOctaves& notesForInstrument(Instrument instrument);
-    static std::vector<int> octaveListForNotesList(GwidiInstrumentOctaves& notesList);
-
-    static int startingOctaveForInstrument(Instrument instrument);
-};
-
-struct MidiParseOptions {
-    InstrumentOptions::Instrument instrument;
-    std::map<int, int> midiOctaveChoices;
 };
 
 
@@ -86,16 +57,11 @@ public:
         return tickMap;
     }
 
-//    inline void assignOctaveMapping(OctaveMapping &mapping) {
-//        octaveMapping = mapping;
-//    }
-//
-//    inline OctaveMapping& getOctaveMapping() {
-//        return octaveMapping;
-//    }
 
     void writeToFile(const std::string& filename);
     static GwidiData* readFromFile(const std::string &filename);
+
+    bool operator==(const GwidiData& rhs) const;
 
 private:
     std::vector<Track> tracks;
@@ -104,18 +70,6 @@ private:
 
     // Map of track -> [start_time, Note[]]
     TickMapType tickMap;
-
-//    OctaveMapping octaveMapping;
-};
-
-class GwidiMidiParser {
-public:
-    static GwidiMidiParser& getInstance() {
-        static GwidiMidiParser instance;
-        return instance;
-    }
-
-    GwidiData* readFile(const char* midiName, MidiParseOptions options);
 };
 
 #endif //GWIDI_MIDI_PARSER_GWIDIDATA_H

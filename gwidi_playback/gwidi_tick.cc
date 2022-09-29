@@ -1,4 +1,5 @@
 #include "GwidiTickHandler.h"
+#include "GwidiOptions.h"
 #include "spdlog/spdlog.h"
 #include <chrono>
 #include "Winuser.h"
@@ -127,19 +128,21 @@ void swapOctaveDown() {
 int main() {
     spdlog::set_level(spdlog::level::debug);
 
-    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\test2_data.mid)", MidiParseOptions{
-            InstrumentOptions::Instrument::HARP,
-            {{0, 4}, {1, 5}, {2, 6}, {3, 7}}
+    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\test2_data.mid)", gwidi::options::MidiParseOptions{
+            gwidi::options::InstrumentOptions::Instrument::HARP
     });
     auto tickHandler = GwidiTickHandler();
     tickHandler.setOptions(GwidiTickOptions{
         GwidiTickOptions::ActionOctaveBehavior::HIGHEST,
-        InstrumentOptions::Instrument::HARP
+        gwidi::options::InstrumentOptions::Instrument::HARP
     });
     tickHandler.assignData(data);
 
     // Play logic
-    starting_octave = InstrumentOptions::startingOctaveForInstrument(InstrumentOptions::Instrument::HARP);
+    auto instrName = gwidi::options::InstrumentOptions::nameForInstrument(gwidi::options::InstrumentOptions::Instrument::HARP);
+    auto &instrumentMapping = gwidi::options::InstrumentOptions::getInstance().getMapping().instrumentMapping[instrName];
+
+    starting_octave = instrumentMapping.startingOctave;
     auto startTime = clock();
     for(auto i = 0; i < 300; i++) {
         auto deltaTime = clock() - startTime;
@@ -164,7 +167,7 @@ int main() {
                 // TODO: Get the proper key from the GwidiData instrument definitions
                 // TODO: Use the currently assigned instrument in gwidi options to determine which one to use
                 // TODO: Need to still determine which octaves we are assigning to the ones available for the instrument
-                sendInput(keyToHk(n->instrumentAction.key.c_str()));
+                sendInput(keyToHk(n->instrumentAction.key));
             }
         }
         spdlog::debug("END Action notes---------");

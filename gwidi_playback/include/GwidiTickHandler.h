@@ -2,6 +2,7 @@
 #define GWIDI_MIDI_PARSER_GWIDITICKHANDLER_H
 
 #include "GwidiData.h"
+#include "gwidi_midi_parser.h"
 
 struct InstrumentAction {
     int octave{0};

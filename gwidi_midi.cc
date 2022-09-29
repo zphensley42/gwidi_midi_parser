@@ -1,5 +1,6 @@
-#include "GwidiData.h"
+#include "gwidi_midi_parser.h"
 #include "spdlog/spdlog.h"
+#include "GwidiOptions.h"
 
 void testWriteAndRead(GwidiData* in) {
     in->writeToFile("test_out.gwd");
@@ -12,7 +13,7 @@ void testWriteAndRead(GwidiData* in) {
         for(auto &trackEntry : entry.second) {
             spdlog::debug("\tstart_offset: {}, # of notes: {}", trackEntry.first, trackEntry.second.size());
             for(auto &n : trackEntry.second) {
-                spdlog::debug("\t\tnote: {}, duration: {}", n.letter, n.duration);
+                spdlog::debug("\t\tnote: {}, duration: {}, instrumentOctave: {}, instrumentNoteNumber: {}, instrumentKey: {}", n.letter, n.duration, n.octave, n.instrument_note_number, n.key);
             }
         }
     }
@@ -23,15 +24,16 @@ void testWriteAndRead(GwidiData* in) {
     auto &tracks1 = in->getTracks();
     auto &tracks2 = readData->getTracks();
     FMT_ASSERT(tracks1.size() == tracks2.size(), "track count does not match");
+
+    FMT_ASSERT(*in == *readData, "data does not match!");
 }
 
 int main() {
     spdlog::set_level(spdlog::level::debug);
 
 //    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\pollyanna.mid)");
-    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\test2_data.mid)", MidiParseOptions{
-            InstrumentOptions::Instrument::HARP,
-        {{0, 3}, {1, 4}, {2, 5}, {3, 6}}
+    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\test2_data.mid)", gwidi::options::MidiParseOptions{
+            gwidi::options::InstrumentOptions::Instrument::HARP
     });
     auto& tracks = data->getTracks();
     for(auto &t : tracks) {
