@@ -2,7 +2,14 @@
 #include "GwidiOptions.h"
 #include "spdlog/spdlog.h"
 #include <chrono>
+
+#if defined(WIN32) || defined(WIN64)
 #include "Winuser.h"
+#elif defined(__linux__)
+#endif
+
+
+#if defined(WIN32) || defined(WIN64)
 
 #define VK_0key 0x30
 #define VK_1key 0x31
@@ -67,9 +74,6 @@ int keyToHk(const std::string& key) {
     return it->second;
 }
 
-
-#if defined(WIN32) || defined(WIN64)
-
 void sendInput(int key) {
     INPUT inputs[2] = {};
     ZeroMemory(inputs, sizeof(inputs));
@@ -95,10 +99,65 @@ void sendInput(int key) {
     }
 }
 
-#elif defined(LINUX)
+#elif defined(__linux__)
+
+#define VK_0key 0x30
+#define VK_1key 0x31
+#define VK_2key 0x32
+#define VK_3key 0x33
+#define VK_4key 0x34
+#define VK_5key 0x35
+#define VK_6key 0x36
+#define VK_7key 0x37
+#define VK_8key 0x38
+#define VK_9key 0x39
+
+#define HK_0key 0x0b
+#define HK_1key 0x02
+#define HK_2key 0x03
+#define HK_3key 0x04
+#define HK_4key 0x05
+#define HK_5key 0x06
+#define HK_6key 0x07
+#define HK_7key 0x08
+#define HK_8key 0x09
+#define HK_9key 0x0a
+static std::unordered_map<std::string, int> vk_map {
+        {"0", VK_0key}, // octave up
+        {"1", VK_1key},
+        {"2", VK_2key},
+        {"3", VK_3key},
+        {"4", VK_4key},
+        {"5", VK_5key},
+        {"6", VK_6key},
+        {"7", VK_7key},
+        {"8", VK_8key},
+        {"9", VK_9key}, // octave down
+};
+
+static std::unordered_map<std::string, int> hk_map {
+        {"0", HK_0key}, // octave up
+        {"1", HK_1key},
+        {"2", HK_2key},
+        {"3", HK_3key},
+        {"4", HK_4key},
+        {"5", HK_5key},
+        {"6", HK_6key},
+        {"7", HK_7key},
+        {"8", HK_8key},
+        {"9", HK_9key}, // octave down
+};
 
 void sendInput(int key) {
     // TODO
+}
+
+int keyToHk(const std::string& key) {
+    auto it = hk_map.find(key);
+    if(it == hk_map.end()) {
+        return 0x00;   // just some dummy for now
+    }
+    return it->second;
 }
 
 #endif

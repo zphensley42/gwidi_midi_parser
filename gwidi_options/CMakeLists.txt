@@ -13,7 +13,7 @@ target_include_directories(gwidi_options PUBLIC
         ${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(gwidi_options PUBLIC
-        ${CMAKE_SOURCE_DIR}/libs/libspdlogd.a
+        spdlog::spdlog
 )
 
 

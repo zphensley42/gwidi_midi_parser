@@ -18,8 +18,8 @@ target_include_directories(gwidi_midi_parser PUBLIC
         spdlog/include
 )
 target_link_libraries(gwidi_midi_parser PUBLIC
-        ${CMAKE_SOURCE_DIR}/libs/libmidifile.a
-        ${CMAKE_SOURCE_DIR}/libs/libspdlogd.a
+        spdlog::spdlog
+        ${CMAKE_SOURCE_DIR}/cmake-build-debug/midifile/libmidifile.a
         gwidi_options
 )
 

@@ -7,7 +7,8 @@
 #include <string_view>
 #include "util.h"
 
-#define CONFIG_DIR R"(E:\Tools\repos\gwidi_midi_parser\config)"
+//#define CONFIG_DIR R"(E:\Tools\repos\gwidi_midi_parser\config)"
+#define CONFIG_DIR R"(/home/zphensley42/repos/gwidi_midi_parser/config)"
 
 namespace gwidi::options {
 
@@ -47,7 +48,8 @@ void InstrumentOptions::fillMapping() {
     // for each instrument, build mapping per note of instrument octave -> midi octave
     inipp::Ini<char> ini;
     std::stringstream ss;
-    ss << CONFIG_DIR << "\\instruments.ini";
+//    ss << CONFIG_DIR << "\\instruments.ini";
+    ss << CONFIG_DIR << "/instruments.ini";
     std::ifstream is(ss.str());
     ini.parse(is);
 
@@ -77,7 +79,8 @@ void InstrumentOptions::fillMapping() {
     for (auto &instrument: instruments) {
         inipp::Ini<char> instrumentIni;
         std::stringstream ss2;
-        ss2 << CONFIG_DIR << "\\" << instrument << ".ini";
+//        ss2 << CONFIG_DIR << "\\" << instrument << ".ini";
+        ss2 << CONFIG_DIR << "/" << instrument << ".ini";
         std::ifstream is2(ss2.str());
         instrumentIni.parse(is2);
 
