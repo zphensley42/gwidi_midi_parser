@@ -13,6 +13,7 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, gwidi::options::MidiP
     auto &instrumentOptions = gwidi::options::InstrumentOptions::getInstance();   // initialize our instrument mapping
 
     auto outData = new GwidiData();
+    outData->assignInstrument(options.instrument);
 
     auto printType = [](smf::MidiEvent &evt) {
         spdlog::debug("event meta type: {}, as STR: ", evt.getMetaType());
@@ -68,6 +69,7 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, gwidi::options::MidiP
         std::vector<Note> notes;
         std::string instrument;
         std::string track_name;
+        double trackDurationInSeconds{0};
 
         for(auto j = 0; j < ec; j++) {
             spdlog::debug("Event: {}", j);
@@ -109,8 +111,12 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, gwidi::options::MidiP
             else if(event.isTimbre()) {
                 instrument = event.getInstrument();
             }
+            else if(event.isEndOfTrack()) {
+                spdlog::debug("EndOfTrack seconds: {}", event.seconds);
+                trackDurationInSeconds = event.seconds;
+            }
         }
-        outData->addTrack(instrument, track_name, notes);
+        outData->addTrack(instrument, track_name, notes, trackDurationInSeconds);
     }
 
     outData->fillTickMap();
@@ -120,11 +126,17 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, gwidi::options::MidiP
 void GwidiData::writeToFile(const std::string& filename) {
     std::ofstream out;
     out.open(filename, std::ios::out | std::ios::binary);
+
+    int instrInt = static_cast<int>(instrument);
+    out.write(reinterpret_cast<const char *>(&(instrInt)), sizeof(int));
+
     size_t track_count = tracks.size();
     out.write(reinterpret_cast<const char *>(&track_count), sizeof(size_t));
     out.write(reinterpret_cast<const char *>(&tempo), sizeof(double));
     out.write(reinterpret_cast<const char *>(&tempoMicro), sizeof(double));
     for(auto& t : tracks) {
+        out.write(reinterpret_cast<const char *>(&(t.durationInSeconds)), sizeof(double));
+
         size_t instrument_name_size = t.instrument_name.size();
         out.write(reinterpret_cast<const char *>(&instrument_name_size), sizeof(size_t));
         out.write(reinterpret_cast<const char *>(&t.instrument_name[0]), sizeof(char) * instrument_name_size);
@@ -168,6 +180,10 @@ GwidiData *GwidiData::readFromFile(const std::string &filename) {
 
     std::vector<unsigned char> inData(in.tellg());
 
+    int instrInt = 0;
+    in.read(reinterpret_cast<char *>(&instrInt), sizeof(int));
+    outData->assignInstrument(static_cast<gwidi::options::InstrumentOptions::Instrument>(instrInt));
+
     size_t track_count;
     in.read(reinterpret_cast<char *>(&track_count), sizeof(size_t));
 
@@ -181,6 +197,9 @@ GwidiData *GwidiData::readFromFile(const std::string &filename) {
     outData->tempoMicro = tempoMicro;
 
     for(auto i = 0; i < track_count; i++) {
+        double trackDurationInSeconds;
+        in.read(reinterpret_cast<char *>(&trackDurationInSeconds), sizeof(double));
+
         size_t instrument_name_size;
         in.read(reinterpret_cast<char *>(&instrument_name_size), sizeof(size_t));
         std::string instrument_name;
@@ -239,7 +258,7 @@ GwidiData *GwidiData::readFromFile(const std::string &filename) {
                     key
             });
         }
-        outData->addTrack(instrument_name, track_name, notes);
+        outData->addTrack(instrument_name, track_name, notes, trackDurationInSeconds);
     }
 
     in.close();

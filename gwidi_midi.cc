@@ -2,9 +2,18 @@
 #include "spdlog/spdlog.h"
 #include "GwidiOptions.h"
 
+#if defined(WIN32) || defined(WIN64)
+#define TEST_FILE R"(E:\Tools\repos\gwidi_midi_parser\assets\test2_data.mid)"
+#elif defined(__linux__)
+#define TEST_FILE R"(/home/zphensley42/repos/gwidi_midi_parser/assets/test3_data.mid)"
+#endif
+
+
 void testWriteAndRead(GwidiData* in) {
     in->writeToFile("test_out.gwd");
     auto readData = GwidiData::readFromFile("test_out.gwd");
+
+    spdlog::debug("in instrument: {}, readData instrument: {}", in->getInstrument(), readData->getInstrument());
 
     auto &tickMap = readData->getTickMap();
     spdlog::debug("printing tick map, size: {}", tickMap.size());
@@ -32,7 +41,7 @@ int main() {
     spdlog::set_level(spdlog::level::debug);
 
 //    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\pollyanna.mid)");
-    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\test2_data.mid)", gwidi::options::MidiParseOptions{
+    auto data = GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::options::MidiParseOptions{
             gwidi::options::InstrumentOptions::Instrument::HARP
     });
     auto& tracks = data->getTracks();

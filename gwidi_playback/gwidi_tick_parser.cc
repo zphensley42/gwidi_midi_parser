@@ -57,6 +57,9 @@ GwidiAction* GwidiTickHandler::processTick(double delta) {
     // TODO: Instead, make actions be related to the options for the instruments? (i.e. play via number and stop or so on)
 
     auto action = new GwidiAction();
+    if(cur_time >= data->longestTrackDuration()) {
+        action->end_reached = true;
+    }
 
     auto floorKeys = currentTickMapFloorKey();
     spdlog::debug("processTick, cur_time: {}", cur_time);
@@ -70,7 +73,6 @@ GwidiAction* GwidiTickHandler::processTick(double delta) {
         for(auto& n : notes) {
             if(!n.activated) {
                 n.activated = true;
-                n.instrumentAction = actionForNote(options.instrument, n.note);
                 action->notes.emplace_back(&n);
             }
         }
@@ -140,17 +142,4 @@ GwidiAction* GwidiTickHandler::processTick(double delta) {
 
 void GwidiTickHandler::setOptions(GwidiTickOptions o) {
     this->options = o;
-}
-
-InstrumentAction GwidiTickHandler::actionForNote(InstrumentOptions::Instrument instrument, Note &note) {
-    InstrumentAction ret;
-    auto instrumentNotes = InstrumentOptions::notesForInstrument(instrument);
-
-    for(auto &entry : instrumentNotes) {
-        if(entry.octave == note.octave && entry.letter == note.letter) {
-            ret.octave = entry.octave;
-            ret.key = entry.key;
-        }
-    }
-    return ret;
 }

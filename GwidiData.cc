@@ -31,11 +31,12 @@ void GwidiData::assignTempo(double t, double tm) {
     this->tempoMicro = tm;
 }
 
-void GwidiData::addTrack(std::string instrument, std::string track_name, const std::vector<Note> &notes) {
+void GwidiData::addTrack(std::string instrument, std::string track_name, const std::vector<Note> &notes, double trackDurationInSeconds) {
     this->tracks.emplace_back(Track{
             std::vector<Note>(),
             std::move(instrument),
-            std::move(track_name)
+            std::move(track_name),
+            trackDurationInSeconds
     });
     for(auto &n : notes) {
         this->tracks.back().notes.emplace_back(Note(n));
@@ -60,7 +61,10 @@ void GwidiData::fillTickMap() {
 }
 
 bool GwidiData::operator==(const GwidiData& rhs) const {
-    bool equal = true;
+    if(instrument != rhs.instrument) {
+        return false;
+    }
+
     if(tracks.size() != rhs.tracks.size()) {
         return false;
     }
@@ -76,6 +80,10 @@ bool GwidiData::operator==(const GwidiData& rhs) const {
     for(auto i = 0; i < tracks.size(); i++) {
         auto &track = tracks.at(i);
         auto &rhsTrack = rhs.tracks.at(i);
+        if(track.durationInSeconds != rhsTrack.durationInSeconds) {
+            return false;
+        }
+
         if(track.instrument_name != rhsTrack.instrument_name || track.track_name != rhsTrack.track_name || track.notes.size() != rhsTrack.notes.size()) {
             return false;
         }
@@ -99,4 +107,14 @@ bool GwidiData::operator==(const GwidiData& rhs) const {
         }
     }
     return true;
+}
+
+double GwidiData::longestTrackDuration() {
+    double longest{0};
+    for(auto &t : tracks) {
+        if(t.durationInSeconds > longest) {
+            longest = t.durationInSeconds;
+        }
+    }
+    return longest;
 }

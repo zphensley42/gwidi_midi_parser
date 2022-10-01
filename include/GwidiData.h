@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <map>
+#include "GwidiOptions.h"
 
 struct Note {
     double start_offset {0.0};
@@ -21,6 +22,7 @@ struct Track {
     std::vector<Note> notes;
     std::string instrument_name;
     std::string track_name;
+    double durationInSeconds;
 };
 
 
@@ -35,7 +37,7 @@ public:
     explicit GwidiData(std::vector<Track>&& tracks);
 
     void assignNotes(int track, const std::vector<Note>& notes);
-    void addTrack(std::string instrument, std::string track_name, const std::vector<Note>& notes);
+    void addTrack(std::string instrument, std::string track_name, const std::vector<Note>& notes, double trackDurationInSeconds);
     void addNote(int track, Note& note);
     void assignTempo(double tempo, double tempoMicro);
 
@@ -57,11 +59,20 @@ public:
         return tickMap;
     }
 
+    inline void assignInstrument(gwidi::options::InstrumentOptions::Instrument instr) {
+        instrument = instr;
+    }
+
+    inline gwidi::options::InstrumentOptions::Instrument getInstrument() {
+        return instrument;
+    }
 
     void writeToFile(const std::string& filename);
     static GwidiData* readFromFile(const std::string &filename);
 
     bool operator==(const GwidiData& rhs) const;
+
+    double longestTrackDuration();
 
 private:
     std::vector<Track> tracks;
@@ -70,6 +81,8 @@ private:
 
     // Map of track -> [start_time, Note[]]
     TickMapType tickMap;
+
+    gwidi::options::InstrumentOptions::Instrument instrument;
 };
 
 #endif //GWIDI_MIDI_PARSER_GWIDIDATA_H

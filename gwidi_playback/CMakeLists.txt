@@ -14,7 +14,7 @@ target_include_directories(gwidi_tick_parser PUBLIC
 )
 target_link_libraries(gwidi_tick_parser PUBLIC
         ${CMAKE_SOURCE_DIR}/cmake-build-debug/libgwidi_midi_parser.a
-        ${CMAKE_SOURCE_DIR}/cmake-build-debug/gwidi_options/libgwidi_midi_parser.a
+        ${CMAKE_SOURCE_DIR}/cmake-build-debug/gwidi_options/libgwidi_options.a
         ${CMAKE_SOURCE_DIR}/cmake-build-debug/midifile/libmidifile.a
         ${CMAKE_SOURCE_DIR}/cmake-build-debug/spdlog/libspdlogd.a
 )
@@ -22,5 +22,6 @@ target_link_libraries(gwidi_tick_parser PUBLIC
 add_executable(gwidi_tick gwidi_tick.cc)
 target_include_directories(gwidi_tick PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include
+        ${CMAKE_SOURCE_DIR}/linux_sendinput
 )
-target_link_libraries(gwidi_tick PUBLIC gwidi_tick_parser)
+target_link_libraries(gwidi_tick PUBLIC gwidi_tick_parser linux_send_input)
