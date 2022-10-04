@@ -22,6 +22,14 @@ target_link_libraries(gwidi_tick_parser PUBLIC
 add_executable(gwidi_tick gwidi_tick.cc)
 target_include_directories(gwidi_tick PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_SOURCE_DIR}/linux_sendinput
 )
-target_link_libraries(gwidi_tick PUBLIC gwidi_tick_parser linux_send_input)
+if(WIN32)
+    target_include_directories(gwidi_tick PUBLIC ${CMAKE_SOURCE_DIR}/windows_sendinput)
+    target_link_libraries(gwidi_tick PUBLIC gwidi_tick_parser windows_send_input)
+elseif(WIN64)
+    target_include_directories(gwidi_tick PUBLIC ${CMAKE_SOURCE_DIR}/windows_sendinput)
+    target_link_libraries(gwidi_tick PUBLIC gwidi_tick_parser windows_send_input)
+elseif(UNIX)
+    target_include_directories(gwidi_tick PUBLIC ${CMAKE_SOURCE_DIR}/linux_sendinput)
+    target_link_libraries(gwidi_tick PUBLIC gwidi_tick_parser linux_send_input)
+endif()
