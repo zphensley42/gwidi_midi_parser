@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 include(FetchContent)
 
 add_subdirectory(linux_sendinput)
+add_subdirectory(windows_sendinput)
 add_subdirectory(midifile)
 add_subdirectory(spdlog)
 add_subdirectory(gwidi_playback)
