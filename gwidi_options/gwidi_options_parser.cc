@@ -10,7 +10,7 @@
 #if defined(WIN32) || defined(WIN64)
 #define CONFIG_DIR R"(E:\Tools\repos\gwidi_midi_parser\config)"
 #elif defined(__linux__)
-#define CONFIG_DIR R"(/home/zphensley42/repos/gwidi_midi_parser/config)"
+#define CONFIG_DIR R"(/home/zhensley/repos/gwidi_godot/gwidi_midi_parser/config)"
 #endif
 
 namespace gwidi::options {

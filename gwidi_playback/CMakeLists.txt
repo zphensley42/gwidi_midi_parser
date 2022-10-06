@@ -33,3 +33,30 @@ elseif(UNIX)
     target_include_directories(gwidi_tick PUBLIC ${CMAKE_SOURCE_DIR}/linux_sendinput)
     target_link_libraries(gwidi_tick PUBLIC gwidi_tick_parser linux_send_input)
 endif()
+
+
+add_custom_command(TARGET gwidi_tick POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/cmake-build-debug/midifile/libmidifile.a"
+        "${CMAKE_SOURCE_DIR}/../gwidi_native_module/external/bin")
+
+add_custom_command(TARGET gwidi_tick POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/cmake-build-debug/spdlog/libspdlogd.a"
+        "${CMAKE_SOURCE_DIR}/../gwidi_native_module/external/bin")
+
+add_custom_command(TARGET gwidi_tick POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/cmake-build-debug/gwidi_options/libgwidi_options.a"
+        "${CMAKE_SOURCE_DIR}/../gwidi_native_module/external/bin")
+
+add_custom_command(TARGET gwidi_tick POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/cmake-build-debug/libgwidi_midi_parser.a"
+        "${CMAKE_SOURCE_DIR}/../gwidi_native_module/external/bin")
+
+add_custom_command(TARGET gwidi_tick POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/cmake-build-debug/gwidi_playback/libgwidi_tick_parser.a"
+        "${CMAKE_SOURCE_DIR}/../gwidi_native_module/external/bin")
+
