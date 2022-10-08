@@ -2,7 +2,6 @@
 #include <sstream>
 #include <map>
 #include "spdlog/spdlog.h"
-#include "MidiFile.h"
 #include "GwidiTickHandler.h"
 
 void GwidiTickHandler::assignData(GwidiData *d) {

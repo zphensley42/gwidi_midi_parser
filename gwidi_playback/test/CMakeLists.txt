@@ -1,0 +1,23 @@
+if(NOT TARGET gwidi_tick)
+    set(gwidi_tick_DIR ${CMAKE_CURRENT_LIST_DIR}/../)
+    find_package(gwidi_tick REQUIRED)
+endif()
+
+add_executable(gwidi_tick_exec gwidi_tick.cc)
+target_include_directories(gwidi_tick_exec PUBLIC
+        ${gwidi_tick_INCLUDE_DIRS}
+)
+target_link_libraries(gwidi_tick_exec PUBLIC ${gwidi_tick_LIBRARIES})
+if(WIN32)
+    target_include_directories(gwidi_tick_exec PUBLIC ${CMAKE_SOURCE_DIR}/windows_sendinput)
+    target_link_libraries(gwidi_tick_exec PUBLIC windows_send_input)
+elseif(WIN64)
+    target_include_directories(gwidi_tick_exec PUBLIC ${CMAKE_SOURCE_DIR}/windows_sendinput)
+    target_link_libraries(gwidi_tick_exec PUBLIC windows_send_input)
+elseif(UNIX)
+    message("Including linux_sendinput")
+    set(linux_send_input_DIR ${CMAKE_CURRENT_LIST_DIR}/../linux_sendinput)
+    find_package(linux_send_input REQUIRED)
+    target_include_directories(gwidi_tick_exec PUBLIC ${linux_send_input_INCLUDE_DIRS})
+    target_link_libraries(gwidi_tick_exec PUBLIC ${linux_send_input_LIBRARIES})
+endif()

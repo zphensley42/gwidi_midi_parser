@@ -4,39 +4,31 @@ project(gwidi_midi_parser)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-include(FetchContent)
+option(BUILD_TESTS "Build test exec" OFF)
 
-add_subdirectory(linux_sendinput)
-add_subdirectory(windows_sendinput)
-add_subdirectory(midifile)
-add_subdirectory(spdlog)
-add_subdirectory(gwidi_playback)
-add_subdirectory(gwidi_options)
+if(NOT TARGET gwidi_tick)
+    set(gwidi_tick_DIR ${CMAKE_CURRENT_LIST_DIR}/gwidi_playback)
+    find_package(gwidi_tick REQUIRED)
+endif()
 
-add_library(gwidi_midi_parser)
-target_sources(gwidi_midi_parser PUBLIC gwidi_midi_parser.cc GwidiData.cc)
-target_include_directories(gwidi_midi_parser PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/include
-        midifile/include
-        spdlog/include
-)
-target_link_libraries(gwidi_midi_parser PUBLIC
-        spdlog::spdlog
-        ${CMAKE_SOURCE_DIR}/cmake-build-debug/midifile/libmidifile.a
-        gwidi_options
-)
+if(NOT TARGET gwidi_midi)
+    set(gwidi_midi_DIR ${CMAKE_CURRENT_LIST_DIR}/gwidi_midi)
+    find_package(gwidi_midi REQUIRED)
+endif()
 
+if(NOT TARGET gwidi_data)
+    set(gwidi_data_DIR ${CMAKE_CURRENT_LIST_DIR}/gwidi_data)
+    find_package(gwidi_data REQUIRED)
+endif()
 
-add_executable(gwidi_midi gwidi_midi.cc)
-target_include_directories(gwidi_midi PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/include
-)
-target_link_libraries(gwidi_midi PUBLIC gwidi_midi_parser)
+if(NOT TARGET gwidi_options)
+    set(gwidi_options_DIR ${CMAKE_CURRENT_LIST_DIR}/gwidi_options)
+    find_package(gwidi_options REQUIRED)
+endif()
 
-FetchContent_Declare(inipp
-        GIT_REPOSITORY https://github.com/mcmtroffaes/inipp.git
-        GIT_TAG        develop
-)
-FetchContent_MakeAvailable(inipp)
-
-target_link_libraries(gwidi_midi_parser PUBLIC inipp::inipp)
+if(BUILD_TESTS)
+    message("BUILDING TESTS")
+    add_subdirectory(gwidi_options/test)
+    add_subdirectory(gwidi_midi/test)
+    add_subdirectory(gwidi_playback/test)
+endif()
