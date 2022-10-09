@@ -1,5 +1,5 @@
-#ifndef GWIDI_MIDI_PARSER_UTIL_H
-#define GWIDI_MIDI_PARSER_UTIL_H
+#ifndef GWIDI_MIDI_PARSER_GWIDIOPTIONS_UTIL_H
+#define GWIDI_MIDI_PARSER_GWIDIOPTIONS_UTIL_H
 
 std::vector<std::string_view> splitSV(std::string_view strv, std::string_view delims = " ") {
     std::vector<std::string_view> output;
@@ -21,4 +21,4 @@ std::vector<std::string_view> splitSV(std::string_view strv, std::string_view de
     return output;
 }
 
-#endif //GWIDI_MIDI_PARSER_UTIL_H
+#endif //GWIDI_MIDI_PARSER_GWIDIOPTIONS_UTIL_H

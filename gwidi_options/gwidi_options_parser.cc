@@ -5,7 +5,7 @@
 #include "spdlog/spdlog.h"
 #include "inipp.h"
 #include <string_view>
-#include "util.h"
+#include "GwidiOptions_Util.h"
 
 #if defined(WIN32) || defined(WIN64)
 #define CONFIG_DIR R"(E:\Tools\repos\gwidi_midi_parser\config)"

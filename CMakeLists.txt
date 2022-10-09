@@ -32,3 +32,38 @@ if(BUILD_TESTS)
     add_subdirectory(gwidi_midi/test)
     add_subdirectory(gwidi_playback/test)
 endif()
+
+
+set(INSTALL_LIB_DEST "lib/gwidi")
+set(INSTALL_HEADER_DEST "include/gwidi")
+set(INSTALL_BIN_DEST "bin/gwidi")
+
+install(
+        TARGETS ${gwidi_options_LIBRARIES} ${gwidi_data_LIBRARIES} ${gwidi_midi_LIBRARIES} ${gwidi_tick_LIBRARIES}
+        DESTINATION ${INSTALL_LIB_DEST}
+)
+
+install(
+        FILES ${gwidi_options_INCLUDE_DIRS}/GwidiOptions.h ${gwidi_options_INCLUDE_DIRS}/GwidiOptions_Util.h
+        DESTINATION ${INSTALL_HEADER_DEST}
+)
+
+install(
+        FILES ${gwidi_data_INCLUDE_DIRS}/GwidiData.h
+        DESTINATION ${INSTALL_HEADER_DEST}
+)
+
+install(
+        FILES ${gwidi_midi_INCLUDE_DIRS}/gwidi_midi_parser.h
+        DESTINATION ${INSTALL_HEADER_DEST}
+)
+
+install(
+        FILES ${gwidi_tick_INSTALL_INCLUDE_DIRS}/GwidiTickHandler.h
+        DESTINATION ${INSTALL_HEADER_DEST}
+)
+
+install(
+        FILES ${linux_send_input_INCLUDE_DIRS}/LinuxSendInput.h
+        DESTINATION ${INSTALL_HEADER_DEST}
+)

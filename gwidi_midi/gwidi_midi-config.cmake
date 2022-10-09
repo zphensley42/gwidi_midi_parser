@@ -39,4 +39,4 @@ target_link_libraries(gwidi_midi PRIVATE
 )
 
 set(gwidi_midi_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include)
-set(gwidi_midi_LIBRARIES gwidi_midi)
+set(gwidi_midi_LIBRARIES gwidi_midi ${midifile_LIBRARIES})

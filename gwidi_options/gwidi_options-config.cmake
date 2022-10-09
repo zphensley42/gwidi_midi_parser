@@ -24,4 +24,4 @@ target_link_libraries(gwidi_options PUBLIC spdlog::spdlog inipp::inipp)
 
 
 set(gwidi_options_INCLUDE_DIRS ${OPTIONS_HDRS})
-set(gwidi_options_LIBRARIES gwidi_options)
+set(gwidi_options_LIBRARIES gwidi_options inipp)
