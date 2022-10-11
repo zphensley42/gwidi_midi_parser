@@ -13,8 +13,6 @@ void testWriteAndRead(GwidiData* in) {
     in->writeToFile("test_out.gwd");
     auto readData = GwidiData::readFromFile("test_out.gwd");
 
-    spdlog::debug("in instrument: {}, readData instrument: {}", in->getInstrument(), readData->getInstrument());
-
     auto &tickMap = readData->getTickMap();
     spdlog::debug("printing tick map, size: {}", tickMap.size());
     for(auto &entry : tickMap) {
@@ -22,7 +20,7 @@ void testWriteAndRead(GwidiData* in) {
         for(auto &trackEntry : entry.second) {
             spdlog::debug("\tstart_offset: {}, # of notes: {}", trackEntry.first, trackEntry.second.size());
             for(auto &n : trackEntry.second) {
-                spdlog::debug("\t\tnote: {}, duration: {}, instrumentOctave: {}, instrumentNoteNumber: {}, instrumentKey: {}", n.letter, n.duration, n.octave, n.instrument_note_number, n.key);
+                spdlog::debug("\t\tnote: {}, duration: {}, instrumentOctave: {}, instrumentKey: {}", n.letter, n.duration, n.octave, n.key);
             }
         }
     }
@@ -41,8 +39,8 @@ int main() {
     spdlog::set_level(spdlog::level::debug);
 
 //    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\pollyanna.mid)");
-    auto data = GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::options::MidiParseOptions{
-            gwidi::options::InstrumentOptions::Instrument::HARP
+    auto data = gwidi::midi::GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::midi::MidiParseOptions{
+        gwidi::midi::Instrument(gwidi::midi::Instrument::Value::HARP)
     });
     auto& tracks = data->getTracks();
     for(auto &t : tracks) {

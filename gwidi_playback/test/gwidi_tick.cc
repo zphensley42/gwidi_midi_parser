@@ -1,5 +1,6 @@
 #include "GwidiTickHandler.h"
 #include "GwidiOptions.h"
+#include "GwidiOptions2.h"
 #include "spdlog/spdlog.h"
 #include <chrono>
 
@@ -56,7 +57,7 @@ void swapOctaveDown() {
     spdlog::info("--END swapping octave down--");
 }
 
-int octaveSwapDelay(GwidiAction *action) {
+int octaveSwapDelay(gwidi::tick::GwidiAction *action) {
     if(action->chosen_octave != -1) {
         int diff = abs(action->chosen_octave - starting_octave);
         return diff > 1 ? 200 : 10;
@@ -79,17 +80,17 @@ int main() {
 
     spdlog::set_level(spdlog::level::debug);
 
-    auto data = GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::options::MidiParseOptions{
-            gwidi::options::InstrumentOptions::Instrument::HARP
+    auto data = gwidi::midi::GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::midi::MidiParseOptions{
+            gwidi::midi::Instrument(gwidi::midi::Instrument::Value::HARP)
     });
-    auto tickHandler = GwidiTickHandler();
-    tickHandler.setOptions(GwidiTickOptions{
-        GwidiTickOptions::ActionOctaveBehavior::HIGHEST
+    auto tickHandler = gwidi::tick::GwidiTickHandler();
+    tickHandler.setOptions(gwidi::tick::GwidiTickOptions{
+        gwidi::tick::GwidiTickOptions::ActionOctaveBehavior::HIGHEST
     });
     tickHandler.assignData(data);
 
     // Play logic
-    auto instrName = gwidi::options::InstrumentOptions::nameForInstrument(gwidi::options::InstrumentOptions::Instrument::HARP);
+    auto instrName = gwidi::midi::Instrument(gwidi::midi::Instrument::Value::HARP).getName();
     auto &instrumentMapping = gwidi::options::InstrumentOptions::getInstance().getMapping().instrumentMapping[instrName];
 
     starting_octave = instrumentMapping.startingOctave;
@@ -121,13 +122,13 @@ int main() {
             delay = octaveSwapDelay(action);    // update to reduce the next swap delay if needed
         }
         for(auto &n : action->notes) {
-            spdlog::debug("note: {}, start_offset: {}, duration: {}", n->note.letter, n->note.start_offset, n->note.duration);
+            spdlog::debug("note key: {}, start_offset: {}, duration: {}", n->key, n->start_offset, n->duration);
 
             // for testing, react to the actions
-            if(n->note.octave == action->chosen_octave) {
+            if(n->octave == action->chosen_octave) {
                 // pick our key from the note
-                spdlog::info("Sending input key: {}", n->note.key);
-                sendInput(n->note.key);
+                spdlog::info("Sending input key: {}", n->key);
+                sendInput(n->key);
             }
         }
         spdlog::debug("END Action notes---------");

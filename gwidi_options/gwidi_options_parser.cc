@@ -15,32 +15,6 @@
 
 namespace gwidi::options {
 
-const char *InstrumentOptions::nameForInstrument(InstrumentOptions::Instrument in) {
-    static std::unordered_map<Instrument, const char *> instrument_name{
-            {Instrument::HARP,  "harp"},
-            {Instrument::FLUTE, "flute"},
-            {Instrument::BELL,  "bell"},
-    };
-    auto it = instrument_name.find(in);
-    if (it == instrument_name.end()) {
-        return "";
-    }
-    return it->second;
-}
-
-InstrumentOptions::Instrument InstrumentOptions::enumForInstrument(const char *in) {
-    static std::unordered_map<const char *, Instrument> instrument_enum{
-            {"harp",  Instrument::HARP},
-            {"flute", Instrument::FLUTE},
-            {"bell",  Instrument::BELL},
-    };
-    auto it = instrument_enum.find(in);
-    if (it == instrument_enum.end()) {
-        return Instrument::UNKNOWN;
-    }
-    return it->second;
-}
-
 InstrumentOptions &InstrumentOptions::getInstance() {
     static InstrumentOptions instance;
     return instance;

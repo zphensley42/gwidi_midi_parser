@@ -1,14 +1,18 @@
-#ifndef GWIDI_MIDI_PARSER_GWIDI_OPTIONS_2_PARSER_H
-#define GWIDI_MIDI_PARSER_GWIDI_OPTIONS_2_PARSER_H
+#ifndef GWIDI_MIDI_PARSER_GWIDIOPTIONS2_H
+#define GWIDI_MIDI_PARSER_GWIDIOPTIONS2_H
 
 // TODO: Build data definition to hold the instrument settings
 #include <map>
 #include <vector>
 #include <string>
 
+namespace gwidi {
+namespace options2 {
+
 struct Note {
     std::vector<std::string> letters;
     int midi_octave{0};
+    int instrument_octave{0};
     std::string key;
 };
 
@@ -26,13 +30,20 @@ struct Instrument {
 class GwidiOptions2 {
 public:
     static GwidiOptions2 &getInstance();
+
+    explicit operator std::string() const;
+
+    Note optionsNoteFromMidiNote(const std::string &instrument, int in_midiOctave, const std::string &letter);
 private:
     GwidiOptions2();
-
     void parseConfigs();
 
     std::map<std::string, Instrument> instruments;
 };
 
+}
+}
 
-#endif //GWIDI_MIDI_PARSER_GWIDI_OPTIONS_2_PARSER_H
+
+
+#endif //GWIDI_MIDI_PARSER_GWIDIOPTIONS2_H

@@ -4,18 +4,28 @@
 #include "spdlog/spdlog.h"
 #include "GwidiTickHandler.h"
 
+namespace gwidi {
+namespace tick {
+
 void GwidiTickHandler::assignData(GwidiData *d) {
     this->data = d;
     auto &tm = data->getTickMap();
 
     // Copy to our wrapper type
     tickMap.clear();
-    for(auto &entry : tm) {
-        tickMap[entry.first] = std::map<double, std::vector<NoteWrapper>>();
-        for(auto &trackEntry : entry.second) {
-            tickMap[entry.first][trackEntry.first] = std::vector<NoteWrapper>();
-            for(auto &n : trackEntry.second) {
-                tickMap[entry.first][trackEntry.first].emplace_back(NoteWrapper{n});
+    for (auto &entry: tm) {
+        tickMap[entry.first] = std::map<double, std::vector<Note>>();
+        for (auto &trackEntry: entry.second) {
+            tickMap[entry.first][trackEntry.first] = std::vector<Note>();
+            for (auto &n: trackEntry.second) {
+                Note note{
+                    n.start_offset,
+                    n.duration,
+                    n.octave,   // Is this octave or instrument?
+                    n.key,
+                    false
+                };
+                tickMap[entry.first][trackEntry.first].emplace_back(note);
             }
         }
     }
@@ -23,15 +33,14 @@ void GwidiTickHandler::assignData(GwidiData *d) {
 
 std::unordered_map<int, double> GwidiTickHandler::currentTickMapFloorKey() {
     std::unordered_map<int, double> ret;
-    for(auto &entry : tickMap) {
+    for (auto &entry: tickMap) {
 
         double bound_key = -1.0;
         auto bound_itr = entry.second.lower_bound(cur_time);
-        if(bound_itr != entry.second.end()) {
-            if(bound_itr == entry.second.begin()) {
+        if (bound_itr != entry.second.end()) {
+            if (bound_itr == entry.second.begin()) {
                 bound_key = bound_itr->first;
-            }
-            else {
+            } else {
                 bound_key = (--bound_itr)->first;
             }
         }
@@ -41,10 +50,10 @@ std::unordered_map<int, double> GwidiTickHandler::currentTickMapFloorKey() {
     return ret;
 }
 
-GwidiAction* GwidiTickHandler::processTick(double delta) {
+GwidiAction *GwidiTickHandler::processTick(double delta) {
     spdlog::debug("processTick, delta: {}", delta);
-    cur_time += delta > 0 ? delta /  1000.0 : 0;
-    if(!this->data) {
+    cur_time += delta > 0 ? delta / 1000.0 : 0;
+    if (!this->data) {
         return nullptr;
     }
 
@@ -56,21 +65,21 @@ GwidiAction* GwidiTickHandler::processTick(double delta) {
     // TODO: Instead, make actions be related to the options for the instruments? (i.e. play via number and stop or so on)
 
     auto action = new GwidiAction();
-    if(cur_time >= data->longestTrackDuration()) {
+    if (cur_time >= data->longestTrackDuration()) {
         action->end_reached = true;
     }
 
     auto floorKeys = currentTickMapFloorKey();
     spdlog::debug("processTick, cur_time: {}", cur_time);
     spdlog::debug("processTick, -----BEGIN floorKeys------");
-    for(auto &entry : floorKeys) {
+    for (auto &entry: floorKeys) {
         spdlog::debug("track: {}, key: {}", entry.first, entry.second);
-        if(entry.second == -1.0) {
+        if (entry.second == -1.0) {
             continue;
         }
         auto &notes = tickMap[entry.first][entry.second];
-        for(auto& n : notes) {
-            if(!n.activated) {
+        for (auto &n: notes) {
+            if (!n.activated) {
                 n.activated = true;
                 action->notes.emplace_back(&n);
             }
@@ -87,13 +96,13 @@ GwidiAction* GwidiTickHandler::processTick(double delta) {
     // Option 1: Always choose the lowest octave (kill other notes)
     // Option 2: Always choose the higest octave (kill other notes)
     // Option 3: Always choose the octave with the most notes in the action (kill other notes)
-    switch(this->options.octaveBehavior) {
+    switch (this->options.octaveBehavior) {
         case GwidiTickOptions::ActionOctaveBehavior::LOWEST: {
             // First, find the lowest octave
             int octave = -1;
-            for(auto &n : action->notes) {
-                if(octave == -1 || n->note.octave < octave) {
-                    octave = n->note.octave;
+            for (auto &n: action->notes) {
+                if (octave == -1 || n->octave < octave) {
+                    octave = n->octave;
                 }
             }
 
@@ -104,9 +113,9 @@ GwidiAction* GwidiTickHandler::processTick(double delta) {
         case GwidiTickOptions::ActionOctaveBehavior::HIGHEST: {
             // First, find the highest octave
             int octave = -1;
-            for(auto &n : action->notes) {
-                if(octave == -1 || n->note.octave > octave) {
-                    octave = n->note.octave;
+            for (auto &n: action->notes) {
+                if (octave == -1 || n->octave > octave) {
+                    octave = n->octave;
                 }
             }
             action->chosen_octave = octave;
@@ -115,17 +124,17 @@ GwidiAction* GwidiTickHandler::processTick(double delta) {
         case GwidiTickOptions::ActionOctaveBehavior::MOST: {
             // Build list of octave counts
             std::unordered_map<int, int> octave_counts;
-            for(auto &n : action->notes) {
-                if(octave_counts.find(n->note.octave) == octave_counts.end()) {
-                    octave_counts[n->note.octave] = 0;
+            for (auto &n: action->notes) {
+                if (octave_counts.find(n->octave) == octave_counts.end()) {
+                    octave_counts[n->octave] = 0;
                 }
-                octave_counts[n->note.octave]++;
+                octave_counts[n->octave]++;
             }
             // Then pick the most
             int octave_count = -1;
             int octave = -1;
-            for(auto &entry : octave_counts) {
-                if(octave == -1 || entry.second > octave_count) {
+            for (auto &entry: octave_counts) {
+                if (octave == -1 || entry.second > octave_count) {
                     octave = entry.first;
                     octave_count = entry.second;
                 }
@@ -141,4 +150,7 @@ GwidiAction* GwidiTickHandler::processTick(double delta) {
 
 void GwidiTickHandler::setOptions(GwidiTickOptions o) {
     this->options = o;
+}
+
+}
 }

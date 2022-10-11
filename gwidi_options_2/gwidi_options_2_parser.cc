@@ -1,16 +1,22 @@
-#include "gwidi_options_2_parser.h"
+#include "GwidiOptions2.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <sstream>
 #include <spdlog/spdlog.h>
 
-using namespace nlohmann;
 
 #if defined(WIN32) || defined(WIN64)
 #define CONFIG_DIR R"(E:\Tools\repos\gwidi_midi_parser\config)"
 #elif defined(__linux__)
 #define CONFIG_DIR R"(/home/zhensley/repos/gwidi_godot/gwidi_midi_parser/config)"
 #endif
+
+
+using namespace nlohmann;
+
+namespace gwidi {
+namespace options2 {
+
 
 GwidiOptions2::GwidiOptions2() {
     parseConfigs();
@@ -47,6 +53,7 @@ void GwidiOptions2::parseConfigs() {
             for(auto& note : octave["notes"]) {
                 Note n;
                 n.midi_octave = note["midi_octave"];
+                n.instrument_octave = o.num;
                 n.key = note["key"];
                 for(auto &letter : note["letters"]) {
                     n.letters.emplace_back(letter);
@@ -60,4 +67,47 @@ void GwidiOptions2::parseConfigs() {
         instrumentConfigFile.close();
     }
     instrumentsConfigFile.close();
+}
+
+GwidiOptions2::operator std::string() const {
+    std::stringstream ss;
+    for(auto &instrumentMapEntry : instruments) {
+        ss << instrumentMapEntry.first + "\n";
+        ss << "\tsupports_held_notes: " << (instrumentMapEntry.second.supports_held_notes ? "true" : "false") << "\n";
+        ss << "\tstarting_octave: " << instrumentMapEntry.second.starting_octave << "\n";
+        ss << "\toctaves:\n";
+        for(auto &octave : instrumentMapEntry.second.octaves) {
+            ss << "\t\tnum: " << octave.num << "\n";
+            ss << "\t\tnotes:\n";
+            for(auto &note : octave.notes) {
+                ss << "\t\t\tmidi_octave: " << note.midi_octave << "\n";
+                ss << "\t\t\tkey: " << note.key << "\n";
+                ss << "\t\t\tletters:\n";
+                for(auto &letter : note.letters) {
+                    ss << "\t\t\t\t" << letter << "\n";
+                }
+            }
+        }
+    }
+    return ss.str();
+}
+
+Note GwidiOptions2::optionsNoteFromMidiNote(const std::string &instrument, int in_midiOctave, const std::string &letter) {
+    for(auto &octave : instruments[instrument].octaves) {
+        for(auto &note : octave.notes) {
+            if(note.midi_octave == in_midiOctave && std::find(note.letters.begin(), note.letters.end(), letter) != note.letters.end()) {
+                return note;
+            }
+        }
+    }
+    return Note {
+            {},
+            -1,
+            -1,
+            ""
+    };
+}
+
+
+}
 }

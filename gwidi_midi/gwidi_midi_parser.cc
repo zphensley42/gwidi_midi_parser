@@ -4,16 +4,30 @@
 #include "gwidi_midi_parser.h"
 #include "GwidiData.h"
 #include "MidiFile.h"
+#include "GwidiOptions2.h"
+
+namespace gwidi {
+namespace midi {
+
+const std::string Instrument::nameForInstrument(Instrument::Value instr) {
+    auto i = Instrument(instr);
+    return i.name;
+}
+
+Instrument::Value Instrument::enumForInstrument(const char* instr) {
+    auto i = Instrument(instr);
+    return i.val;
+}
+
 
 // TODO: When building gwidi data from midi, we need to determine which octaves to use as our set of octaves that we support
 // TODO: against instruments
 // TODO: Part of this is determining: 1 which instrument we are using to thus determine how many octaves we can support and
 // TODO: 2 determining which midi octaves map to which gwidi octaves
-GwidiData* GwidiMidiParser::readFile(const char* midiName, gwidi::options::MidiParseOptions options) {
-    auto &instrumentOptions = gwidi::options::InstrumentOptions::getInstance();   // initialize our instrument mapping
+GwidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOptions& options) {
+    auto &instrumentOptions = gwidi::options2::GwidiOptions2::getInstance();   // initialize our instrument mapping
 
     auto outData = new GwidiData();
-    outData->assignInstrument(options.instrument);
 
     auto printType = [](smf::MidiEvent &evt) {
         spdlog::debug("event meta type: {}, as STR: ", evt.getMetaType());
@@ -83,19 +97,18 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, gwidi::options::MidiP
 
                 // When adding a note, determine the 'Note' class variables via our instrumentMapping options
                 // If a note doesn't exist in our mapping, it shouldn't be used
-                auto instrName = gwidi::options::InstrumentOptions::nameForInstrument(options.instrument);
-                auto instrumentNoteAttribs = instrumentOptions.instrumentNoteAttributesForMidi(instrName, event.getKeyOctave(), event.getKeyLetter());
+                auto instrName = options.instrument.getName();
+                auto optionsNote = instrumentOptions.optionsNoteFromMidiNote(instrName, event.getKeyOctave(), event.getKeyLetter());
                 // Use the event if we have a valid mapping for it
-                if(!instrumentNoteAttribs.letters.empty()) {
+                if(!optionsNote.letters.empty()) {
                     notes.emplace_back(Note{
                             event.seconds,
                             event.getDurationInSeconds(),
-                            instrumentNoteAttribs.instrumentOctave,
+                            optionsNote.instrument_octave,
                             event.getKeyLetter(),
                             "",
                             i,
-                            instrumentNoteAttribs.instrumentNoteNumber,
-                            instrumentNoteAttribs.key
+                            optionsNote.key
                     });
                 }
             }
@@ -123,146 +136,6 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, gwidi::options::MidiP
     return outData;
 }
 
-void GwidiData::writeToFile(const std::string& filename) {
-    std::ofstream out;
-    out.open(filename, std::ios::out | std::ios::binary);
-
-    int instrInt = static_cast<int>(instrument);
-    out.write(reinterpret_cast<const char *>(&(instrInt)), sizeof(int));
-
-    size_t track_count = tracks.size();
-    out.write(reinterpret_cast<const char *>(&track_count), sizeof(size_t));
-    out.write(reinterpret_cast<const char *>(&tempo), sizeof(double));
-    out.write(reinterpret_cast<const char *>(&tempoMicro), sizeof(double));
-    for(auto& t : tracks) {
-        out.write(reinterpret_cast<const char *>(&(t.durationInSeconds)), sizeof(double));
-
-        size_t instrument_name_size = t.instrument_name.size();
-        out.write(reinterpret_cast<const char *>(&instrument_name_size), sizeof(size_t));
-        out.write(reinterpret_cast<const char *>(&t.instrument_name[0]), sizeof(char) * instrument_name_size);
-
-        size_t track_name_size = t.track_name.size();
-        out.write(reinterpret_cast<const char *>(&track_name_size), sizeof(size_t));
-        out.write(reinterpret_cast<const char *>(&t.track_name[0]), sizeof(char) * track_name_size);
-
-        size_t note_count = t.notes.size();
-        out.write(reinterpret_cast<const char *>(&note_count), sizeof(size_t));
-
-        for(auto &n : t.notes) {
-            out.write(reinterpret_cast<const char *>(&(n.start_offset)), sizeof(double));
-            out.write(reinterpret_cast<const char *>(&(n.duration)), sizeof(double));
-            out.write(reinterpret_cast<const char *>(&(n.octave)), sizeof(int));
-
-            size_t letter_size = n.letter.size();
-            out.write(reinterpret_cast<const char *>(&letter_size), sizeof(size_t));
-            out.write(reinterpret_cast<const char *>(&(n.letter[0])), sizeof(char) * letter_size);
-
-            size_t instrument_size = n.instrument.size();
-            out.write(reinterpret_cast<const char *>(&instrument_size), sizeof(size_t));
-            out.write(reinterpret_cast<const char *>(&(n.instrument[0])), sizeof(char) * instrument_size);
-
-            out.write(reinterpret_cast<const char *>(&(n.track)), sizeof(int));
-
-            out.write(reinterpret_cast<const char *>(&(n.instrument_note_number)), sizeof(int));
-
-            size_t key_size = n.key.size();
-            out.write(reinterpret_cast<const char *>(&key_size), sizeof(size_t));
-            out.write(reinterpret_cast<const char *>(&(n.key[0])), sizeof(char) * key_size);
-        }
-    }
-    out.close();
 }
-
-GwidiData *GwidiData::readFromFile(const std::string &filename) {
-    auto outData = new GwidiData();
-    std::ifstream in;
-    in.open(filename, std::ios::in | std::ios::binary);
-
-    std::vector<unsigned char> inData(in.tellg());
-
-    int instrInt = 0;
-    in.read(reinterpret_cast<char *>(&instrInt), sizeof(int));
-    outData->assignInstrument(static_cast<gwidi::options::InstrumentOptions::Instrument>(instrInt));
-
-    size_t track_count;
-    in.read(reinterpret_cast<char *>(&track_count), sizeof(size_t));
-
-    double tempo;
-    in.read(reinterpret_cast<char *>(&tempo), sizeof(double));
-
-    double tempoMicro;
-    in.read(reinterpret_cast<char *>(&tempoMicro), sizeof(double));
-
-    outData->tempo = tempo;
-    outData->tempoMicro = tempoMicro;
-
-    for(auto i = 0; i < track_count; i++) {
-        double trackDurationInSeconds;
-        in.read(reinterpret_cast<char *>(&trackDurationInSeconds), sizeof(double));
-
-        size_t instrument_name_size;
-        in.read(reinterpret_cast<char *>(&instrument_name_size), sizeof(size_t));
-        std::string instrument_name;
-        instrument_name.resize(instrument_name_size);
-        in.read(reinterpret_cast<char *>(&instrument_name[0]), sizeof(char) * instrument_name_size);
-
-        size_t track_name_size;
-        in.read(reinterpret_cast<char *>(&track_name_size), sizeof(size_t));
-        std::string track_name;
-        track_name.resize(track_name_size);
-        in.read(reinterpret_cast<char *>(&track_name[0]), sizeof(char) * track_name_size);
-
-        size_t notes_size;
-        in.read(reinterpret_cast<char *>(&notes_size), sizeof(size_t));
-
-        std::vector<Note> notes;
-        for(auto j = 0; j < notes_size; j++) {
-            double start_offset;
-            in.read(reinterpret_cast<char *>(&start_offset), sizeof(double));
-
-            double duration;
-            in.read(reinterpret_cast<char *>(&duration), sizeof(double));
-
-            int octave;
-            in.read(reinterpret_cast<char *>(&octave), sizeof(int));
-
-            size_t letter_size;
-            in.read(reinterpret_cast<char *>(&letter_size), sizeof(size_t));
-            std::string letter; letter.resize(letter_size);
-            in.read(reinterpret_cast<char *>(&letter[0]), sizeof(char) * letter_size);
-
-            size_t instrument_size;
-            in.read(reinterpret_cast<char *>(&instrument_size), sizeof(size_t));
-            std::string instrument; instrument.resize(instrument_size);
-            in.read(reinterpret_cast<char *>(&instrument[0]), sizeof(char) * instrument_size);
-
-            int track;
-            in.read(reinterpret_cast<char *>(&track), sizeof(int));
-
-            int instrument_note_number;
-            in.read(reinterpret_cast<char *>(&instrument_note_number), sizeof(int));
-
-            size_t key_size;
-            in.read(reinterpret_cast<char *>(&key_size), sizeof(size_t));
-            std::string key; key.resize(key_size);
-            in.read(reinterpret_cast<char *>(&key[0]), sizeof(char) * key_size);
-
-            notes.emplace_back(Note{
-                    start_offset,
-                    duration,
-                    octave,
-                    letter,
-                    instrument,
-                    track,
-                    instrument_note_number,
-                    key
-            });
-        }
-        outData->addTrack(instrument_name, track_name, notes, trackDurationInSeconds);
-    }
-
-    in.close();
-    outData->fillTickMap();
-    return outData;
 }
 

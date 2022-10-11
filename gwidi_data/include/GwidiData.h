@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <map>
-#include <gwidi_options-1.0/GwidiOptions.h>
+#include "GwidiOptions2.h"
 
 struct Note {
     double start_offset {0.0};
@@ -14,7 +14,6 @@ struct Note {
     std::string letter {};
     std::string instrument {};
     int track {0};
-    int instrument_note_number{0};
     std::string key{};
 };
 
@@ -29,6 +28,7 @@ struct Track {
 
 class GwidiData {
 public:
+    // TODO: We don't need to keep our tracks
     using TickMapType = std::map<int, std::map<double, std::vector<Note>>>;
     using OctaveMapping = std::unordered_map<int, int>;
 
@@ -59,14 +59,6 @@ public:
         return tickMap;
     }
 
-    inline void assignInstrument(gwidi::options::InstrumentOptions::Instrument instr) {
-        instrument = instr;
-    }
-
-    inline gwidi::options::InstrumentOptions::Instrument getInstrument() {
-        return instrument;
-    }
-
     void writeToFile(const std::string& filename);
     static GwidiData* readFromFile(const std::string &filename);
 
@@ -81,8 +73,6 @@ private:
 
     // Map of track -> [start_time, Note[]]
     TickMapType tickMap;
-
-    gwidi::options::InstrumentOptions::Instrument instrument;
 };
 
 #endif //GWIDI_MIDI_PARSER_GWIDIDATA_H

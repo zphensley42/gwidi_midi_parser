@@ -3,6 +3,11 @@ if(NOT TARGET gwidi_options)
     find_package(gwidi_options REQUIRED)
 endif()
 
+if(NOT TARGET gwidi_options_2)
+    set(gwidi_options_2_DIR ${CMAKE_CURRENT_LIST_DIR}/../gwidi_options_2/)
+    find_package(gwidi_options_2 REQUIRED)
+endif()
+
 if(NOT TARGET gwidi_data)
     set(gwidi_data_DIR ${CMAKE_CURRENT_LIST_DIR}/../gwidi_data/)
     find_package(gwidi_data REQUIRED)
@@ -24,12 +29,14 @@ target_include_directories(gwidi_tick PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include
         ${gwidi_data_INCLUDE_DIRS}
         ${gwidi_options_INCLUDE_DIRS}
+        ${gwidi_options_2_INCLUDE_DIRS}
         ${gwidi_midi_INCLUDE_DIRS}
 )
 target_link_libraries(gwidi_tick PRIVATE
         spdlog::spdlog
         ${gwidi_data_LIBRARIES}
         ${gwidi_options_LIBRARIES}
+        ${gwidi_options_2_LIBRARIES}
         ${gwidi_midi_LIBRARIES}
 )
 
