@@ -37,12 +37,19 @@ std::unordered_map<int, double> GwidiTickHandler::currentTickMapFloorKey() {
 
         double bound_key = -1.0;
         auto bound_itr = entry.second.lower_bound(cur_time);
-        if (bound_itr != entry.second.end()) {
-            if (bound_itr == entry.second.begin()) {
-                bound_key = bound_itr->first;
-            } else {
-                bound_key = (--bound_itr)->first;
-            }
+
+        // We have 3 cases:
+        // 1 - cur_time is < all keys, lower_bound returns begin, return first()
+        // 2 - cur_time is > some keys, < some keys, lower_bound returns first >=, return --itr
+        // 3 - cur_time is > all keys, lower_bound returns end, return back()
+        if(bound_itr == entry.second.begin()) {
+            bound_key = bound_itr->first;
+        }
+        else if(bound_itr == entry.second.end()) {
+            bound_key = (--entry.second.end())->first;
+        }
+        else {
+            bound_key = (--bound_itr)->first;
         }
         ret[entry.first] = bound_key;
         spdlog::debug("currentTickMapFloorKey cur_time: {}, bound_key: {}", cur_time, bound_key);
@@ -73,10 +80,10 @@ GwidiAction *GwidiTickHandler::processTick(double delta) {
     spdlog::debug("processTick, cur_time: {}", cur_time);
     spdlog::debug("processTick, -----BEGIN floorKeys------");
     for (auto &entry: floorKeys) {
-        spdlog::debug("track: {}, key: {}", entry.first, entry.second);
         if (entry.second == -1.0) {
             continue;
         }
+        spdlog::debug("track: {}, key: {}", entry.first, entry.second);
         auto &notes = tickMap[entry.first][entry.second];
         for (auto &n: notes) {
             if (!n.activated) {

@@ -7,37 +7,37 @@
       "notes": [
         {
           "letters": ["C", "C#"],
-          "midi_octave": 4,
+          "midi_octave": 5,
           "key": "1"
         },
         {
           "letters": ["D", "D#"],
-          "midi_octave": 4,
+          "midi_octave": 5,
           "key": "2"
         },
         {
           "letters": ["E"],
-          "midi_octave": 4,
+          "midi_octave": 5,
           "key": "3"
         },
         {
           "letters": ["F", "F#"],
-          "midi_octave": 4,
+          "midi_octave": 5,
           "key": "4"
         },
         {
           "letters": ["G", "G#"],
-          "midi_octave": 4,
+          "midi_octave": 5,
           "key": "5"
         },
         {
           "letters": ["A", "A#"],
-          "midi_octave": 4,
+          "midi_octave": 5,
           "key": "6"
         },
         {
           "letters": ["B"],
-          "midi_octave": 4,
+          "midi_octave": 5,
           "key": "7"
         }
       ]
@@ -47,37 +47,37 @@
       "notes": [
         {
           "letters": ["C", "C#"],
-          "midi_octave": 5,
+          "midi_octave": 6,
           "key": "1"
         },
         {
           "letters": ["D", "D#"],
-          "midi_octave": 5,
+          "midi_octave": 6,
           "key": "2"
         },
         {
           "letters": ["E"],
-          "midi_octave": 5,
+          "midi_octave": 6,
           "key": "3"
         },
         {
           "letters": ["F", "F#"],
-          "midi_octave": 5,
+          "midi_octave": 6,
           "key": "4"
         },
         {
           "letters": ["G", "G#"],
-          "midi_octave": 5,
+          "midi_octave": 6,
           "key": "5"
         },
         {
           "letters": ["A", "A#"],
-          "midi_octave": 5,
+          "midi_octave": 6,
           "key": "6"
         },
         {
           "letters": ["B"],
-          "midi_octave": 5,
+          "midi_octave": 6,
           "key": "7"
         }
       ]
@@ -87,42 +87,42 @@
       "notes": [
         {
           "letters": ["C", "C#"],
-          "midi_octave": 6,
+          "midi_octave": 7,
           "key": "1"
         },
         {
           "letters": ["D", "D#"],
-          "midi_octave": 6,
+          "midi_octave": 7,
           "key": "2"
         },
         {
           "letters": ["E"],
-          "midi_octave": 6,
+          "midi_octave": 7,
           "key": "3"
         },
         {
           "letters": ["F", "F#"],
-          "midi_octave": 6,
+          "midi_octave": 7,
           "key": "4"
         },
         {
           "letters": ["G", "G#"],
-          "midi_octave": 6,
+          "midi_octave": 7,
           "key": "5"
         },
         {
           "letters": ["A", "A#"],
-          "midi_octave": 6,
+          "midi_octave": 7,
           "key": "6"
         },
         {
           "letters": ["B"],
-          "midi_octave": 6,
+          "midi_octave": 7,
           "key": "7"
         },
         {
           "letters": ["C", "C#"],
-          "midi_octave": 7,
+          "midi_octave": 8,
           "key": "8"
         }
       ]

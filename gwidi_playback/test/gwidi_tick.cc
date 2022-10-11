@@ -11,12 +11,13 @@
 #elif defined(__linux__)
 #include "LinuxSendInput.h"
 
-//#define TEST_FILE R"(/home/zphensley42/repos/gwidi_midi_parser/assets/test3_data.mid)"
+//#define TEST_FILE R"(/home/zhensley/repos/gwidi_godot/gwidi_midi_parser/assets/test3_data.mid)"
+#define TEST_FILE R"(/home/zhensley/repos/gwidi_godot/gwidi_midi_parser/assets/slow_scale.mid)"
 //#define TEST_FILE R"(/home/zphensley42/repos/gwidi_midi_parser/assets/pollyanna7.mid)"
 //#define TEST_FILE R"(/home/zphensley42/repos/gwidi_midi_parser/assets/super_mario.mid)"
 //#define TEST_FILE R"(/home/zphensley42/repos/gwidi_midi_parser/assets/undertale_snowy.mid)"
 //#define TEST_FILE R"(/home/zphensley42/repos/gwidi_midi_parser/assets/whats_new_scooby_doo.mid)"
-#define TEST_FILE R"(/home/zhensley/repos/gwidi_godot/gwidi_midi_parser/assets/moana.mid)"
+//#define TEST_FILE R"(/home/zhensley/repos/gwidi_godot/gwidi_midi_parser/assets/moana.mid)"
 #endif
 
 
@@ -91,9 +92,9 @@ int main() {
 
     // Play logic
     auto instrName = gwidi::midi::Instrument(gwidi::midi::Instrument::Value::HARP).getName();
-    auto &instrumentMapping = gwidi::options::InstrumentOptions::getInstance().getMapping().instrumentMapping[instrName];
+    auto &instrumentMapping = gwidi::options2::GwidiOptions2::getInstance().getMapping()[instrName];
 
-    starting_octave = instrumentMapping.startingOctave;
+    starting_octave = instrumentMapping.starting_octave;
 
     auto startTime = curTime();
     bool endReached = false;

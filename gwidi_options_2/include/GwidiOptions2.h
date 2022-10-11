@@ -32,8 +32,11 @@ public:
     static GwidiOptions2 &getInstance();
 
     explicit operator std::string() const;
-
+    inline std::map<std::string, Instrument>& getMapping() {
+        return instruments;
+    }
     Note optionsNoteFromMidiNote(const std::string &instrument, int in_midiOctave, const std::string &letter);
+
 private:
     GwidiOptions2();
     void parseConfigs();
