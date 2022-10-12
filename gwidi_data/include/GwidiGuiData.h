@@ -13,8 +13,8 @@ enum Instrument {
     FLUTE = 2,
     BELL = 3
 };
-static const char* nameForInstrument(Instrument instr);
-static Instrument instrumentForName(const char* instr);
+const char* nameForInstrument(Instrument instr);
+Instrument instrumentForName(const char* instr);
 
 struct Note {
     std::vector<std::string> letters;
@@ -39,10 +39,14 @@ struct Measure {
 class GwidiGuiData {
 public:
     GwidiGuiData() : GwidiGuiData(Instrument::HARP) {}
-    GwidiGuiData(Instrument instr);
+    explicit GwidiGuiData(Instrument instr);
 
     void addMeasure(); // Add to gui data
-    void toggleNote(); // Add to tick map
+    void toggleNote(){} // Add to tick map
+
+    inline std::vector<Measure>& getMeasures() {
+        return measures;
+    }
 
     // TODO: Need to be able to convert this data to GwidiData (at least in 2 pieces: tick map for playback and data for saving)
     // TODO: Need to be able to convert GwidiData to this type (for loading and MIDI import)

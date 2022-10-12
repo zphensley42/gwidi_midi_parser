@@ -46,7 +46,7 @@ set(INSTALL_HEADER_DEST "include/gwidi")
 set(INSTALL_BIN_DEST "bin/gwidi")
 
 install(
-        TARGETS ${gwidi_options_LIBRARIES} ${gwidi_data_LIBRARIES} ${gwidi_midi_LIBRARIES} ${gwidi_tick_LIBRARIES}
+        TARGETS ${gwidi_options_LIBRARIES} ${gwidi_data_LIBRARIES} ${gwidi_midi_LIBRARIES} ${gwidi_tick_LIBRARIES} ${gwidi_options_2_LIBRARIES}
         DESTINATION ${INSTALL_LIB_DEST}
 )
 
@@ -56,7 +56,12 @@ install(
 )
 
 install(
-        FILES ${gwidi_data_INCLUDE_DIRS}/GwidiData.h
+        FILES ${gwidi_options_2_INCLUDE_DIRS}/GwidiOptions2.h
+        DESTINATION ${INSTALL_HEADER_DEST}
+)
+
+install(
+        FILES ${gwidi_data_INCLUDE_DIRS}/GwidiData.h ${gwidi_data_INCLUDE_DIRS}/GwidiGuiData.h
         DESTINATION ${INSTALL_HEADER_DEST}
 )
 

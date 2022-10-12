@@ -29,6 +29,8 @@ struct Instrument {
 
 class GwidiOptions2 {
 public:
+    using Mapping = std::map<std::string, Instrument>;
+
     static GwidiOptions2 &getInstance();
 
     explicit operator std::string() const;

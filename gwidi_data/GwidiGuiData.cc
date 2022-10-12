@@ -37,6 +37,7 @@ void GwidiGuiData::addMeasure() {
     for(auto &octave : options.octaves) {
         Octave o;
         o.num = octave.num;
+        o.measure = measure.num;
         for(auto i = 0; i < 16; i++) {
             o.notes[i] = std::vector<Note>();
             for(auto &note : octave.notes) {
