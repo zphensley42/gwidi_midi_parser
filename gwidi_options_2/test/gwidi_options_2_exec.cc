@@ -3,6 +3,8 @@
 
 int main() {
     spdlog::set_level(spdlog::level::debug);
-    auto &options = GwidiOptions2::getInstance();
+    auto &options = gwidi::options2::GwidiOptions2::getInstance();
     spdlog::debug("====Options====\n{}", (std::string)options);
+
+    return 0;
 }

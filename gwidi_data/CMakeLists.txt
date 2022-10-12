@@ -14,6 +14,11 @@ find_package(gwidi_options REQUIRED)
 set(gwidi_data_DIR ${CMAKE_CURRENT_LIST_DIR})
 find_package(gwidi_data REQUIRED)
 
+if(BUILD_TESTS)
+    message("BUILDING TESTS")
+    add_subdirectory(test)
+endif()
+
 # Define installation for outside projects
 #install(
 #        FILES

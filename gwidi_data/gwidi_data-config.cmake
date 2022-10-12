@@ -14,6 +14,7 @@ set(DATA_HDRS ${CMAKE_CURRENT_LIST_DIR}/include)
 add_library(gwidi_data)
 target_sources(gwidi_data PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/GwidiData.cc
+        ${CMAKE_CURRENT_LIST_DIR}/GwidiGuiData.cc
 )
 target_include_directories(gwidi_data PUBLIC
         ${DATA_HDRS}

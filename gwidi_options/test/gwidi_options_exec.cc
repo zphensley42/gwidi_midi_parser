@@ -24,4 +24,6 @@ int main() {
     printAttribs("attribs3", attribs3);
     printAttribs("attribs4", attribs4);
     printAttribs("attribs5", attribs5);
+
+    return 0;
 }

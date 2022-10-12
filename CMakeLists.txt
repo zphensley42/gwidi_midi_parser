@@ -33,6 +33,7 @@ endif()
 
 if(BUILD_TESTS)
     message("BUILDING TESTS")
+    add_subdirectory(gwidi_data/test)
     add_subdirectory(gwidi_options/test)
     add_subdirectory(gwidi_options_2/test)
     add_subdirectory(gwidi_midi/test)
