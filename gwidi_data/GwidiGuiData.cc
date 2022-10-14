@@ -46,7 +46,8 @@ void GwidiGuiData::addMeasure() {
                     measure.num,
                     o.num,
                     i,
-                    note.key
+                    note.key,
+                    false
                 };
                 o.notes[i].emplace_back(n);
             }

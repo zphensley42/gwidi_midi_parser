@@ -21,7 +21,8 @@ struct Note {
     int measure{0};
     int octave{0};
     int time{0};
-    std::string key;
+    std::string key{};
+    bool activated{false};
 };
 
 struct Octave {
