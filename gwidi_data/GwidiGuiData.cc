@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "GwidiGuiData.h"
 #include "GwidiOptions2.h"
 
@@ -56,6 +57,35 @@ void GwidiGuiData::addMeasure() {
     }
 
     measures.emplace_back(measure);
+}
+
+void GwidiGuiData::toggleNote(Note *note) {
+    note->activated = !note->activated;
+
+    // Assign based on offset time (which is a function of time and tempo)
+    double offset = timeIndexToTickOffset(note->measure, note->time);
+    auto tickIt = m_tickMap.find(offset);
+    if(tickIt == m_tickMap.end()) {
+        m_tickMap[offset] = std::vector<Note>();
+    }
+    auto &notes = m_tickMap[offset];
+    auto notesIt = std::find_if(notes.begin(), notes.end(), [note](const Note& n){
+        return n.measure == note->measure && n.octave == note->octave && n.time == note->time && n.key == note->key;
+    });
+    if(notesIt != notes.end()) {
+        notes.erase(notesIt);
+    }
+    else {
+        notes.emplace_back(Note{*note});
+    }
+}
+
+double GwidiGuiData::timeIndexToTickOffset(int measure, int index) {
+    int num_notes_per_measure = options2::GwidiOptions2::getInstance().notesPerMeasure();
+    int note_time = (measure * num_notes_per_measure) + (index);
+    double tempo = options2::GwidiOptions2::getInstance().tempo();
+
+    return index == 0 ? 0 : (tempo / note_time) / 1000.0;      // bpm -> per second
 }
 
 }}}

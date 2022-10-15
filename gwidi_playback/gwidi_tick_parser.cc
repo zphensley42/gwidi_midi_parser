@@ -95,10 +95,6 @@ GwidiAction *GwidiTickHandler::processTick(double delta) {
     spdlog::debug("processTick, -----END floorKeys------");
 
 
-    // TODO: Need to handle octave switches on the action
-    // TODO: A single action cannot play notes across octaves
-    // TODO: There is some timing needed to play a note, switch an octave, then play a new note
-
     // Some determinations can be made for how to treat cases where multiple octaves are present:
     // Option 1: Always choose the lowest octave (kill other notes)
     // Option 2: Always choose the higest octave (kill other notes)

@@ -28,45 +28,56 @@ GwidiOptions2 &GwidiOptions2::getInstance() {
 }
 
 void GwidiOptions2::parseConfigs() {
-    std::stringstream ss;
-    ss << CONFIG_DIR << "/instruments.json";
-    std::ifstream instrumentsConfigFile(ss.str());
-    json instrumentsJson;
-    instrumentsConfigFile >> instrumentsJson;
-    for(auto &instrument : instrumentsJson) {
-        spdlog::debug("Instrument: {}", instrument);
+    {
+        std::stringstream ss;
+        ss << CONFIG_DIR << "/instruments.json";
+        std::ifstream instrumentsConfigFile(ss.str());
+        json instrumentsJson;
+        instrumentsConfigFile >> instrumentsJson;
+        for(auto &instrument : instrumentsJson) {
+            spdlog::debug("Instrument: {}", instrument);
 
-        std::stringstream ss2;
-        ss2 << CONFIG_DIR << "/" << instrument.get<std::string>() << ".json";
-        std::string instrFileName = ss2.str();
-        std::ifstream instrumentConfigFile(instrFileName);
-        json instrumentJson;
-        instrumentConfigFile >> instrumentJson;
+            std::stringstream ss2;
+            ss2 << CONFIG_DIR << "/" << instrument.get<std::string>() << ".json";
+            std::string instrFileName = ss2.str();
+            std::ifstream instrumentConfigFile(instrFileName);
+            json instrumentJson;
+            instrumentConfigFile >> instrumentJson;
 
-        // TODO: Parse the instrument
-        Instrument i;
-        i.supports_held_notes = instrumentJson["supports_held_notes"];
-        i.starting_octave = instrumentJson["starting_octave"];
-        for(auto& octave : instrumentJson["octaves"]) {
-            Octave o;
-            o.num = octave["num"];
-            for(auto& note : octave["notes"]) {
-                Note n;
-                n.midi_octave = note["midi_octave"];
-                n.instrument_octave = o.num;
-                n.key = note["key"];
-                for(auto &letter : note["letters"]) {
-                    n.letters.emplace_back(letter);
+            Instrument i;
+            i.supports_held_notes = instrumentJson["supports_held_notes"];
+            i.starting_octave = instrumentJson["starting_octave"];
+            for(auto& octave : instrumentJson["octaves"]) {
+                Octave o;
+                o.num = octave["num"];
+                for(auto& note : octave["notes"]) {
+                    Note n;
+                    n.midi_octave = note["midi_octave"];
+                    n.instrument_octave = o.num;
+                    n.key = note["key"];
+                    for(auto &letter : note["letters"]) {
+                        n.letters.emplace_back(letter);
+                    }
+                    o.notes.emplace_back(n);
                 }
-                o.notes.emplace_back(n);
+                i.octaves.emplace_back(o);
             }
-            i.octaves.emplace_back(o);
-        }
-        instruments[instrument] = i;
+            instruments[instrument] = i;
 
-        instrumentConfigFile.close();
+            instrumentConfigFile.close();
+        }
+        instrumentsConfigFile.close();
     }
-    instrumentsConfigFile.close();
+
+    {
+        std::stringstream ss;
+        ss << CONFIG_DIR << "/playback.json";
+        std::ifstream playbackConfigFile(ss.str());
+        json playbackJson;
+        playbackConfigFile >> playbackJson;
+        m_tempo = playbackJson["tempo"].get<double>();
+        playbackConfigFile.close();
+    }
 }
 
 GwidiOptions2::operator std::string() const {
@@ -106,6 +117,10 @@ Note GwidiOptions2::optionsNoteFromMidiNote(const std::string &instrument, int i
             -1,
             ""
     };
+}
+
+double GwidiOptions2::tempo() {
+    return m_tempo;
 }
 
 

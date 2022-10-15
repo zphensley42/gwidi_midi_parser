@@ -39,11 +39,15 @@ struct Measure {
 // TODO: Hook this data up to our Godot program
 class GwidiGuiData {
 public:
+    // key -> time in offset
+    // value -> list of notes that are activated for that time
+    using TickMapType = std::map<double, std::vector<Note>>;
+
     GwidiGuiData() : GwidiGuiData(Instrument::HARP) {}
     explicit GwidiGuiData(Instrument instr);
 
     void addMeasure(); // Add to gui data
-    void toggleNote(){} // Add to tick map
+    void toggleNote(Note* note);
 
     inline std::vector<Measure>& getMeasures() {
         return measures;
@@ -55,6 +59,9 @@ public:
 private:
     Instrument instrument;
 
+    double timeIndexToTickOffset(int measure, int index);
+
+    TickMapType m_tickMap;
     std::vector<Measure> measures;
 };
 

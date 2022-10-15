@@ -39,11 +39,19 @@ public:
     }
     Note optionsNoteFromMidiNote(const std::string &instrument, int in_midiOctave, const std::string &letter);
 
+    inline int notesPerMeasure() {
+        return 16;  // for now, just force 16th notes
+    }
+
+    // Should read this from config, override this when we import a midi or load a file
+    double tempo();
+
 private:
     GwidiOptions2();
     void parseConfigs();
 
     std::map<std::string, Instrument> instruments;
+    double m_tempo{0.0};
 };
 
 }
