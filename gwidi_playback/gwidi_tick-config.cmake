@@ -60,6 +60,14 @@ elseif(UNIX)
 endif()
 
 
+add_library(gwidi_playback)
+add_dependencies(gwidi_playback gwidi_tick)
+target_sources(gwidi_playback PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/gwidi_playback.cc
+)
+target_link_libraries(gwidi_playback PUBLIC gwidi_tick)
+
+
 set(gwidi_tick_INSTALL_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include)
 set(gwidi_tick_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include ${sendinput_include})
-set(gwidi_tick_LIBRARIES gwidi_tick ${sendinput_libs})
+set(gwidi_tick_LIBRARIES gwidi_tick gwidi_playback ${sendinput_libs})

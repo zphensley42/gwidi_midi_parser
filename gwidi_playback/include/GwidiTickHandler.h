@@ -4,10 +4,10 @@
 #include "GwidiOptions2.h"
 
 #include "GwidiData.h"
+#include "GwidiGuiData.h"
 #include "gwidi_midi_parser.h"
 
-namespace gwidi {
-namespace tick {
+namespace gwidi::tick {
 
 struct Note {
     double start_offset {0.0};
@@ -35,21 +35,33 @@ struct GwidiTickOptions {
 
 class GwidiTickHandler {
 public:
-    using WrapperTickMapType = std::map<int, std::map<double, std::vector<Note>>>;
+    using WrapperTickMapType = std::map<double, std::vector<Note>>;
     void setOptions(GwidiTickOptions options);
-    void assignData(GwidiData* data);
+    void assignData(gwidi::data::midi::GwidiData* data);
+    void assignData(gwidi::data::gui::GwidiGuiData* data);
     GwidiAction* processTick(double delta);
 
+    inline bool hasData() {
+        return m_gui_data != nullptr || m_midi_data != nullptr;
+    }
+
 private:
-    std::unordered_map<int, double> currentTickMapFloorKey();
+    double currentTickMapFloorKey();
+
+    GwidiAction* processMidiTick();
+    GwidiAction* processGuiTick();
+    void filterByOctaveBehavior(GwidiAction *action) const;
+
+    Note fromNote(gwidi::data::midi::Note &note);
+    Note fromNote(gwidi::data::gui::Note &note);
 
     GwidiTickOptions options;
-    GwidiData* data{nullptr};
-    WrapperTickMapType tickMap;
+    gwidi::data::midi::GwidiData* m_midi_data{nullptr};
+    gwidi::data::gui::GwidiGuiData* m_gui_data{nullptr};
+    WrapperTickMapType m_tickMap;
     double cur_time{0.0};
 };
 
-}
 }
 
 #endif //GWIDI_MIDI_PARSER_GWIDITICKHANDLER_H

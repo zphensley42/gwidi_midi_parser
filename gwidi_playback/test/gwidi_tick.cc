@@ -81,8 +81,9 @@ int main() {
 
     spdlog::set_level(spdlog::level::debug);
 
-    auto data = gwidi::midi::GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::midi::MidiParseOptions{
-            gwidi::midi::Instrument(gwidi::midi::Instrument::Value::HARP)
+    auto data = gwidi::midi::GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::midi::MidiParseOptions {
+        gwidi::midi::Instrument::HARP,
+        1
     });
     auto tickHandler = gwidi::tick::GwidiTickHandler();
     tickHandler.setOptions(gwidi::tick::GwidiTickOptions{
@@ -91,7 +92,7 @@ int main() {
     tickHandler.assignData(data);
 
     // Play logic
-    auto instrName = gwidi::midi::Instrument(gwidi::midi::Instrument::Value::HARP).getName();
+    auto instrName = gwidi::midi::nameForInstrument(gwidi::midi::Instrument::HARP);
     auto &instrumentMapping = gwidi::options2::GwidiOptions2::getInstance().getMapping()[instrName];
 
     starting_octave = instrumentMapping.starting_octave;

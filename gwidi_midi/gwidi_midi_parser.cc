@@ -6,28 +6,32 @@
 #include "MidiFile.h"
 #include "GwidiOptions2.h"
 
-namespace gwidi {
-namespace midi {
+namespace gwidi::midi {
 
-const std::string Instrument::nameForInstrument(Instrument::Value instr) {
-    auto i = Instrument(instr);
-    return i.name;
+const char* nameForInstrument(Instrument instr) {
+    static std::map<Instrument, const char*> m {
+            {Instrument::UNKNOWN, "unknown"},
+            {Instrument::HARP, "harp"},
+            {Instrument::FLUTE, "flute"},
+            {Instrument::BELL, "bell"},
+    };
+    return m[instr];
+}
+Instrument instrumentForName(const char* instr) {
+    static std::map<const char*, Instrument> m {
+            {"unknown", Instrument::UNKNOWN},
+            {"harp", Instrument::HARP},
+            {"flute", Instrument::FLUTE},
+            {"bell", Instrument::BELL},
+    };
+    return m[instr];
 }
 
-Instrument::Value Instrument::enumForInstrument(const char* instr) {
-    auto i = Instrument(instr);
-    return i.val;
-}
 
-
-// TODO: When building gwidi data from midi, we need to determine which octaves to use as our set of octaves that we support
-// TODO: against instruments
-// TODO: Part of this is determining: 1 which instrument we are using to thus determine how many octaves we can support and
-// TODO: 2 determining which midi octaves map to which gwidi octaves
-GwidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOptions& options) {
+gwidi::data::midi::GwidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOptions& options) {
     auto &instrumentOptions = gwidi::options2::GwidiOptions2::getInstance();   // initialize our instrument mapping
 
-    auto outData = new GwidiData();
+    auto outData = new gwidi::data::midi::GwidiData();
 
     auto printType = [](smf::MidiEvent &evt) {
         spdlog::debug("event meta type: {}, as STR: ", evt.getMetaType());
@@ -76,11 +80,15 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOption
     spdlog::debug("# Tracks: {}", tc);
 
     for(auto i = 0; i < tc; i++) {
+        if(i != options.chosen_track) {
+            spdlog::debug("Skipping track: {}, chosen_track: {}", i, options.chosen_track);
+            continue;
+        }
         spdlog::debug("Track: {}", i);
         auto &track = midiFile[i];
         auto ec = track.getEventCount();
 
-        std::vector<Note> notes;
+        std::vector<gwidi::data::midi::Note> notes;
         std::string instrument;
         std::string track_name;
         double trackDurationInSeconds{0};
@@ -97,11 +105,11 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOption
 
                 // When adding a note, determine the 'Note' class variables via our instrumentMapping options
                 // If a note doesn't exist in our mapping, it shouldn't be used
-                auto instrName = options.instrument.getName();
+                auto instrName = nameForInstrument(options.instrument);
                 auto optionsNote = instrumentOptions.optionsNoteFromMidiNote(instrName, event.getKeyOctave(), event.getKeyLetter());
                 // Use the event if we have a valid mapping for it
                 if(!optionsNote.letters.empty()) {
-                    notes.emplace_back(Note{
+                    notes.emplace_back(gwidi::data::midi::Note{
                             event.seconds,
                             event.getDurationInSeconds(),
                             optionsNote.instrument_octave,
@@ -136,6 +144,5 @@ GwidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOption
     return outData;
 }
 
-}
 }
 

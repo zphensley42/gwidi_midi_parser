@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-namespace gwidi { namespace data { namespace gui {
+namespace gwidi::data::gui {
 
 enum Instrument {
     UNKNOWN = 0,
@@ -23,6 +23,8 @@ struct Note {
     int time{0};
     std::string key{};
     bool activated{false};
+
+    double timeIndexToTickOffset();
 };
 
 struct Octave {
@@ -49,8 +51,14 @@ public:
     void addMeasure(); // Add to gui data
     void toggleNote(Note* note);
 
+    double trackDuration();
+
     inline std::vector<Measure>& getMeasures() {
         return measures;
+    }
+
+    inline TickMapType & getTickMap() {
+        return m_tickMap;
     }
 
     // TODO: Need to be able to convert this data to GwidiData (at least in 2 pieces: tick map for playback and data for saving)
@@ -59,12 +67,10 @@ public:
 private:
     Instrument instrument;
 
-    double timeIndexToTickOffset(int measure, int index);
-
     TickMapType m_tickMap;
     std::vector<Measure> measures;
 };
 
-}}}
+}
 
 #endif //GWIDI_MIDI_PARSER_GWIDIGUIDATA_H

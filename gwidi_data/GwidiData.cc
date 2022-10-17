@@ -2,27 +2,28 @@
 #include "spdlog/spdlog.h"
 #include <fstream>
 
+namespace gwidi::data::midi {
 
-GwidiData::GwidiData(const std::vector<Track>& tracks) {
+GwidiData::GwidiData(const std::vector<Track> &tracks) {
     this->tracks.clear();
-    for(auto &t : tracks) {
+    for (auto &t: tracks) {
         this->tracks.emplace_back(Track(t));
     }
 }
 
-GwidiData::GwidiData(std::vector<Track>&& tracks) {
+GwidiData::GwidiData(std::vector<Track> &&tracks) {
     this->tracks = std::move(tracks);
 }
 
-void GwidiData::assignNotes(int track, const std::vector<Note>& in_notes) {
+void GwidiData::assignNotes(int track, const std::vector<Note> &in_notes) {
     this->tracks[track] = Track();
-    for(auto &note : in_notes) {
+    for (auto &note: in_notes) {
         this->tracks[track].notes.emplace_back(Note(note));
     }
 }
 
 void GwidiData::addNote(int track, Note &note) {
-    if(track >= 0 && track < this->tracks.size()) {
+    if (track >= 0 && track < this->tracks.size()) {
         this->tracks[track].notes.emplace_back(Note(note));
     }
 }
@@ -32,64 +33,65 @@ void GwidiData::assignTempo(double t, double tm) {
     this->tempoMicro = tm;
 }
 
-void GwidiData::addTrack(std::string instrument, std::string track_name, const std::vector<Note> &notes, double trackDurationInSeconds) {
+void GwidiData::addTrack(std::string instrument, std::string track_name, const std::vector<Note> &notes,
+                         double trackDurationInSeconds) {
     this->tracks.emplace_back(Track{
             std::vector<Note>(),
             std::move(instrument),
             std::move(track_name),
             trackDurationInSeconds
     });
-    for(auto &n : notes) {
+    for (auto &n: notes) {
         this->tracks.back().notes.emplace_back(Note(n));
     }
 }
 
+// TODO: Rename GwidiData to GwidiMidiData
 void GwidiData::fillTickMap() {
     tickMap.clear();
-    for(auto i = 0; i < tracks.size(); i++) {
-        auto &t = tracks.at(i);
-        tickMap[i] = std::map<double, std::vector<Note>>();
-        auto &map = tickMap[i];
-        spdlog::debug("fillTickMap  filling notes for track with #{} notes", t.notes.size());
-        for(auto &n : t.notes) {
-            if(map.find(n.start_offset) == map.end()) {
-                spdlog::debug("fillTickMap  start_offset {} not found, adding", n.start_offset);
-                map[n.start_offset] = std::vector<Note>();
-            }
-            map[n.start_offset].emplace_back(Note(n));
+
+    // Assume 1 track, due to chosen_track options in the midi parsing
+    auto &t = tracks.front();
+    spdlog::debug("fillTickMap  filling notes for track with #{} notes", t.notes.size());
+    for (auto &n: t.notes) {
+        if (tickMap.find(n.start_offset) == tickMap.end()) {
+            spdlog::debug("fillTickMap  start_offset {} not found, adding", n.start_offset);
+            tickMap[n.start_offset] = std::vector<Note>();
         }
+        tickMap[n.start_offset].emplace_back(Note(n));
     }
 }
 
-bool GwidiData::operator==(const GwidiData& rhs) const {
-    if(tracks.size() != rhs.tracks.size()) {
+bool GwidiData::operator==(const GwidiData &rhs) const {
+    if (tracks.size() != rhs.tracks.size()) {
         return false;
     }
 
-    if(tempo != rhs.tempo) {
+    if (tempo != rhs.tempo) {
         return false;
     }
 
-    if(tempoMicro != rhs.tempoMicro) {
+    if (tempoMicro != rhs.tempoMicro) {
         return false;
     }
 
-    for(auto i = 0; i < tracks.size(); i++) {
+    for (auto i = 0; i < tracks.size(); i++) {
         auto &track = tracks.at(i);
         auto &rhsTrack = rhs.tracks.at(i);
-        if(track.durationInSeconds != rhsTrack.durationInSeconds) {
+        if (track.durationInSeconds != rhsTrack.durationInSeconds) {
             return false;
         }
 
-        if(track.instrument_name != rhsTrack.instrument_name || track.track_name != rhsTrack.track_name || track.notes.size() != rhsTrack.notes.size()) {
+        if (track.instrument_name != rhsTrack.instrument_name || track.track_name != rhsTrack.track_name ||
+            track.notes.size() != rhsTrack.notes.size()) {
             return false;
         }
 
-        for(auto j = 0; j < track.notes.size(); j++) {
+        for (auto j = 0; j < track.notes.size(); j++) {
             auto &note = track.notes.at(j);
             auto &rhsNote = rhsTrack.notes.at(j);
 
-            if(
+            if (
                     note.start_offset != rhsNote.start_offset ||
                     note.duration != rhsNote.duration ||
                     note.octave != rhsNote.octave ||
@@ -97,7 +99,7 @@ bool GwidiData::operator==(const GwidiData& rhs) const {
                     note.instrument != rhsNote.instrument ||
                     note.track != rhsNote.track ||
                     note.key != rhsNote.key
-            ) {
+                    ) {
                 return false;
             }
         }
@@ -107,8 +109,8 @@ bool GwidiData::operator==(const GwidiData& rhs) const {
 
 double GwidiData::longestTrackDuration() {
     double longest{0};
-    for(auto &t : tracks) {
-        if(t.durationInSeconds > longest) {
+    for (auto &t: tracks) {
+        if (t.durationInSeconds > longest) {
             longest = t.durationInSeconds;
         }
     }
@@ -116,7 +118,7 @@ double GwidiData::longestTrackDuration() {
 }
 
 
-void GwidiData::writeToFile(const std::string& filename) {
+void GwidiData::writeToFile(const std::string &filename) {
     std::ofstream out;
     out.open(filename, std::ios::out | std::ios::binary);
 
@@ -124,7 +126,7 @@ void GwidiData::writeToFile(const std::string& filename) {
     out.write(reinterpret_cast<const char *>(&track_count), sizeof(size_t));
     out.write(reinterpret_cast<const char *>(&tempo), sizeof(double));
     out.write(reinterpret_cast<const char *>(&tempoMicro), sizeof(double));
-    for(auto& t : tracks) {
+    for (auto &t: tracks) {
         out.write(reinterpret_cast<const char *>(&(t.durationInSeconds)), sizeof(double));
 
         size_t instrument_name_size = t.instrument_name.size();
@@ -138,7 +140,7 @@ void GwidiData::writeToFile(const std::string& filename) {
         size_t note_count = t.notes.size();
         out.write(reinterpret_cast<const char *>(&note_count), sizeof(size_t));
 
-        for(auto &n : t.notes) {
+        for (auto &n: t.notes) {
             out.write(reinterpret_cast<const char *>(&(n.start_offset)), sizeof(double));
             out.write(reinterpret_cast<const char *>(&(n.duration)), sizeof(double));
             out.write(reinterpret_cast<const char *>(&(n.octave)), sizeof(int));
@@ -180,7 +182,7 @@ GwidiData *GwidiData::readFromFile(const std::string &filename) {
     outData->tempo = tempo;
     outData->tempoMicro = tempoMicro;
 
-    for(auto i = 0; i < track_count; i++) {
+    for (auto i = 0; i < track_count; i++) {
         double trackDurationInSeconds;
         in.read(reinterpret_cast<char *>(&trackDurationInSeconds), sizeof(double));
 
@@ -200,7 +202,7 @@ GwidiData *GwidiData::readFromFile(const std::string &filename) {
         in.read(reinterpret_cast<char *>(&notes_size), sizeof(size_t));
 
         std::vector<Note> notes;
-        for(auto j = 0; j < notes_size; j++) {
+        for (auto j = 0; j < notes_size; j++) {
             double start_offset;
             in.read(reinterpret_cast<char *>(&start_offset), sizeof(double));
 
@@ -212,12 +214,14 @@ GwidiData *GwidiData::readFromFile(const std::string &filename) {
 
             size_t letter_size;
             in.read(reinterpret_cast<char *>(&letter_size), sizeof(size_t));
-            std::string letter; letter.resize(letter_size);
+            std::string letter;
+            letter.resize(letter_size);
             in.read(reinterpret_cast<char *>(&letter[0]), sizeof(char) * letter_size);
 
             size_t instrument_size;
             in.read(reinterpret_cast<char *>(&instrument_size), sizeof(size_t));
-            std::string instrument; instrument.resize(instrument_size);
+            std::string instrument;
+            instrument.resize(instrument_size);
             in.read(reinterpret_cast<char *>(&instrument[0]), sizeof(char) * instrument_size);
 
             int track;
@@ -225,7 +229,8 @@ GwidiData *GwidiData::readFromFile(const std::string &filename) {
 
             size_t key_size;
             in.read(reinterpret_cast<char *>(&key_size), sizeof(size_t));
-            std::string key; key.resize(key_size);
+            std::string key;
+            key.resize(key_size);
             in.read(reinterpret_cast<char *>(&key[0]), sizeof(char) * key_size);
 
             notes.emplace_back(Note{
@@ -244,4 +249,6 @@ GwidiData *GwidiData::readFromFile(const std::string &filename) {
     in.close();
     outData->fillTickMap();
     return outData;
+}
+
 }
