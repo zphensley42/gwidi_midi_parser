@@ -3,5 +3,5 @@ if(NOT TARGET gwidi_midi)
     find_package(gwidi_midi REQUIRED)
 endif()
 
-add_executable(gwidi_midi_exec gwidi_midi.cc)
+add_executable(gwidi_midi_exec gwidi_midi_exec.cc)
 target_link_libraries(gwidi_midi_exec PUBLIC gwidi_midi)

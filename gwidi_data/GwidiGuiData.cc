@@ -97,8 +97,6 @@ double GwidiGuiData::timeIndexToTickOffset(Note* note) const {
     int note_time = (note->measure * num_notes_per_measure) + (note->time);
 
     return note_time == 0 ? 0 : note_time * sixteenthNoteTPQ;
-
-//    return note_time == 0 ? 0 : (tempo / note_time) / 1000.0;      // bpm -> per second
 }
 
 }

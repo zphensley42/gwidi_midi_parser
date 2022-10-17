@@ -15,13 +15,16 @@ const char* nameForInstrument(Instrument instr);
 Instrument instrumentForName(const char* instr);
 
 struct MidiParseOptions {
-    Instrument instrument;
+    Instrument instrument{Instrument::UNKNOWN};
     int chosen_track{0};
 };
 
 struct MidiParseTrackStats {
     std::string name;
+    std::string instrument;
     int num_notes;
+    double tempo;
+    double duration;
 };
 
 class GwidiMidiParser {

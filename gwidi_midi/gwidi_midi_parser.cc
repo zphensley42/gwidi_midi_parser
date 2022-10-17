@@ -146,5 +146,61 @@ gwidi::data::midi::GwidiMidiData* GwidiMidiParser::readFile(const char* midiName
     return outData;
 }
 
+// Used to let users choose which track to pick when midi importing (passed in MidiParseOptions)
+GwidiMidiParser::TrackMeta GwidiMidiParser::getTrackMetaMap(const char *midiName) {
+    TrackMeta ret;
+
+    smf::MidiFile midiFile;
+    midiFile.read(midiName);
+
+    // Some prep for how we plan to use the data
+    midiFile.doTimeAnalysis();
+    auto linkedNotesCount = midiFile.linkNotePairs();
+    spdlog::debug("Linked {} events!", linkedNotesCount);
+
+    auto tc = midiFile.getTrackCount();
+    spdlog::debug("Ticks Per Quarter Note: {}", midiFile.getTicksPerQuarterNote());
+    spdlog::debug("# Tracks: {}", tc);
+
+    for(auto i = 0; i < tc; i++) {
+        ret[i] = MidiParseTrackStats{};
+        ret[i].num_notes = 0;
+
+        spdlog::debug("Track: {}", i);
+        auto &track = midiFile[i];
+        auto ec = track.getEventCount();
+
+        for(auto j = 0; j < ec; j++) {
+            spdlog::debug("Event: {}", j);
+            auto &event = track[j];
+
+            if(event.isNoteOn()) {
+                ret[i].num_notes++;
+            }
+            else if(event.isTempo()) {
+                ret[i].tempo = event.getTempoSeconds();
+            }
+            else if(event.isInstrumentName()) {
+                if(ret[i].instrument.empty()) {
+                    ret[i].instrument = event.getInstrument();
+                }
+            }
+            else if(event.isTrackName()) {
+                ret[i].name = event.getMetaContent();
+            }
+            else if(event.isTimbre()) {
+                if(ret[i].instrument.empty()) {
+                    ret[i].instrument = event.getInstrument();
+                }
+            }
+            else if(event.isEndOfTrack()) {
+                ret[i].duration = event.seconds;
+            }
+        }
+    }
+
+    return ret;
+}
+
 }
 

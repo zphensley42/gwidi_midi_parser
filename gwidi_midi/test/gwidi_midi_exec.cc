@@ -139,6 +139,21 @@ void testConversionGuiToMidi() {
     delete data;
 }
 
+void testTrackMetaData() {
+    auto trackMetaMap = gwidi::midi::GwidiMidiParser::getInstance().getTrackMetaMap(TEST_FILE);
+    FMT_ASSERT(trackMetaMap.at(0).name == "", "Name did not match");
+    FMT_ASSERT(trackMetaMap.at(0).instrument == "", "Instrument did not match");
+    FMT_ASSERT(trackMetaMap.at(0).num_notes == 0, "num_notes did not match");
+    FMT_ASSERT(trackMetaMap.at(0).tempo == 0.66666599999999998, "tempo did not match");
+    FMT_ASSERT(trackMetaMap.at(0).duration == 0, "duration");
+
+    FMT_ASSERT(trackMetaMap.at(1).name == "Electric Piano", "Name did not match");
+    FMT_ASSERT(trackMetaMap.at(1).instrument == "Acoustic Grand Piano", "Instrument did not match");
+    FMT_ASSERT(trackMetaMap.at(1).num_notes == 22, "num_notes did not match");
+    FMT_ASSERT(trackMetaMap.at(1).tempo == 0, "tempo did not match");
+    FMT_ASSERT(trackMetaMap.at(1).duration == 15.499984499999995, "duration");
+}
+
 int main() {
     spdlog::set_level(spdlog::level::debug);
 
@@ -155,6 +170,7 @@ int main() {
     testWriteAndRead(data);
     testConversionMidiToGui();
     testConversionGuiToMidi();
+    testTrackMetaData();
 
     delete data;
     return 0;

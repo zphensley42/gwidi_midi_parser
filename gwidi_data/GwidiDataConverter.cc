@@ -59,7 +59,6 @@ midi::GwidiMidiData* GwidiDataConverter::guiToMidi(gui::GwidiGuiData* data) {
         for(auto &octave : octaves) {
             auto &times = octave.notes;
             for(auto &time : times) {
-                int timeIndex = time.first;
                 for(auto &note : time.second) {
                     if(note.activated) {
                         auto midiNote = gwidi::data::midi::Note {

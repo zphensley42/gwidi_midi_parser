@@ -61,7 +61,7 @@ install(
 )
 
 install(
-        FILES ${gwidi_data_INCLUDE_DIRS}/GwidiData.h ${gwidi_data_INCLUDE_DIRS}/GwidiGuiData.h
+        FILES ${gwidi_data_INCLUDE_DIRS}/GwidiMidiData.h ${gwidi_data_INCLUDE_DIRS}/GwidiGuiData.h ${gwidi_data_INCLUDE_DIRS}/GwidiDataConverter.h
         DESTINATION ${INSTALL_HEADER_DEST}
 )
 
@@ -71,7 +71,7 @@ install(
 )
 
 install(
-        FILES ${gwidi_tick_INSTALL_INCLUDE_DIRS}/GwidiTickHandler.h
+        FILES ${gwidi_tick_INSTALL_INCLUDE_DIRS}/GwidiTickHandler.h ${gwidi_tick_INSTALL_INCLUDE_DIRS}/GwidiPlayback.h
         DESTINATION ${INSTALL_HEADER_DEST}
 )
 
