@@ -28,7 +28,7 @@ GwidiPlayback::~GwidiPlayback() {
     stop();
 }
 
-void GwidiPlayback::assignData(gwidi::data::midi::GwidiData* data, gwidi::tick::GwidiTickOptions options) {
+void GwidiPlayback::assignData(gwidi::data::midi::GwidiMidiData* data, gwidi::tick::GwidiTickOptions options) {
     m_handler.setOptions(options);
     m_handler.assignData(data);
 }

@@ -2,7 +2,7 @@
 #include <sstream>
 #include "spdlog/spdlog.h"
 #include "gwidi_midi_parser.h"
-#include "GwidiData.h"
+#include "GwidiMidiData.h"
 #include "MidiFile.h"
 #include "GwidiOptions2.h"
 
@@ -28,10 +28,10 @@ Instrument instrumentForName(const char* instr) {
 }
 
 
-gwidi::data::midi::GwidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOptions& options) {
+gwidi::data::midi::GwidiMidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOptions& options) {
     auto &instrumentOptions = gwidi::options2::GwidiOptions2::getInstance();   // initialize our instrument mapping
 
-    auto outData = new gwidi::data::midi::GwidiData();
+    auto outData = new gwidi::data::midi::GwidiMidiData();
 
     auto printType = [](smf::MidiEvent &evt) {
         spdlog::debug("event meta type: {}, as STR: ", evt.getMetaType());
@@ -80,10 +80,6 @@ gwidi::data::midi::GwidiData* GwidiMidiParser::readFile(const char* midiName, co
     spdlog::debug("# Tracks: {}", tc);
 
     for(auto i = 0; i < tc; i++) {
-        if(i != options.chosen_track) {
-            spdlog::debug("Skipping track: {}, chosen_track: {}", i, options.chosen_track);
-            continue;
-        }
         spdlog::debug("Track: {}", i);
         auto &track = midiFile[i];
         auto ec = track.getEventCount();
@@ -136,6 +132,12 @@ gwidi::data::midi::GwidiData* GwidiMidiParser::readFile(const char* midiName, co
                 spdlog::debug("EndOfTrack seconds: {}", event.seconds);
                 trackDurationInSeconds = event.seconds;
             }
+        }
+
+        // This is still required down here because we do other things with track 1 (like assign tempo)
+        if(i != options.chosen_track) {
+            spdlog::debug("Skipping track: {}, chosen_track: {}", i, options.chosen_track);
+            continue;
         }
         outData->addTrack(instrument, track_name, notes, trackDurationInSeconds);
     }

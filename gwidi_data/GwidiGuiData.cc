@@ -24,6 +24,7 @@ Instrument instrumentForName(const char* instr) {
 }
 
 GwidiGuiData::GwidiGuiData(gwidi::data::gui::Instrument instr) : instrument{instr} {
+    m_tempo = options2::GwidiOptions2::getInstance().tempo();
     addMeasure();
 }
 
@@ -63,7 +64,7 @@ void GwidiGuiData::toggleNote(Note *note) {
     note->activated = !note->activated;
 
     // Assign based on offset time (which is a function of time and tempo)
-    double offset = note->timeIndexToTickOffset();
+    double offset = timeIndexToTickOffset(note);
     auto tickIt = m_tickMap.find(offset);
     if(tickIt == m_tickMap.end()) {
         m_tickMap[offset] = std::vector<Note>();
@@ -83,16 +84,19 @@ void GwidiGuiData::toggleNote(Note *note) {
 double GwidiGuiData::trackDuration() {
     auto &noteTimes = measures.back().octaves.front().notes;
     auto endIt = noteTimes.end();
-    return std::prev(endIt)->second.front().timeIndexToTickOffset() + 1.0;
+    auto &note = std::prev(endIt)->second.front();
+    return timeIndexToTickOffset(&note) + 1.0;
 }
 
-double Note::timeIndexToTickOffset() {
+double GwidiGuiData::timeIndexToTickOffset(Note* note) const {
+    if(!note) {
+        return 0.0;
+    }
     int num_notes_per_measure = options2::GwidiOptions2::getInstance().notesPerMeasure();
-    int note_time = (measure * num_notes_per_measure) + (time);
-    double tempo = options2::GwidiOptions2::getInstance().tempo();
+    double sixteenthNoteTPQ = 15 / m_tempo;
+    int note_time = (note->measure * num_notes_per_measure) + (note->time);
 
-    double tpq = 60.0 / tempo;
-    return note_time == 0 ? 0 : note_time * tpq;
+    return note_time == 0 ? 0 : note_time * sixteenthNoteTPQ;
 
 //    return note_time == 0 ? 0 : (tempo / note_time) / 1000.0;      // bpm -> per second
 }

@@ -23,8 +23,6 @@ struct Note {
     int time{0};
     std::string key{};
     bool activated{false};
-
-    double timeIndexToTickOffset();
 };
 
 struct Octave {
@@ -38,7 +36,6 @@ struct Measure {
     std::vector<Octave> octaves{};
 };
 
-// TODO: Hook this data up to our Godot program
 class GwidiGuiData {
 public:
     // key -> time in offset
@@ -52,6 +49,7 @@ public:
     void toggleNote(Note* note);
 
     double trackDuration();
+    double timeIndexToTickOffset(Note* note) const;
 
     inline std::vector<Measure>& getMeasures() {
         return measures;
@@ -61,12 +59,19 @@ public:
         return m_tickMap;
     }
 
+    inline double getTempo() {
+        return m_tempo;
+    }
+
     // TODO: Need to be able to convert this data to GwidiData (at least in 2 pieces: tick map for playback and data for saving)
     // TODO: Need to be able to convert GwidiData to this type (for loading and MIDI import)
 
 private:
+    friend class GwidiDataConverter;
+
     Instrument instrument;
 
+    double m_tempo{0.0};
     TickMapType m_tickMap;
     std::vector<Measure> measures;
 };

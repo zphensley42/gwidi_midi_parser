@@ -6,7 +6,7 @@
 
 namespace gwidi::tick {
 
-void GwidiTickHandler::assignData(gwidi::data::midi::GwidiData *data) {
+void GwidiTickHandler::assignData(gwidi::data::midi::GwidiMidiData *data) {
     m_tickMap.clear();
     m_midi_data = data;
 
@@ -47,7 +47,7 @@ Note GwidiTickHandler::fromNote(gwidi::data::midi::Note &note) {
 }
 Note GwidiTickHandler::fromNote(gwidi::data::gui::Note &note) {
     return Note {
-        note.timeIndexToTickOffset(),
+        m_gui_data->timeIndexToTickOffset(&note),
         1.0,    // no sense of 'duration' for gui currently, everything is a product of 1/<num notes per measure>
         note.octave,
         note.key,

@@ -1,5 +1,5 @@
-#ifndef GWIDI_MIDI_PARSER_GWIDIDATA_H
-#define GWIDI_MIDI_PARSER_GWIDIDATA_H
+#ifndef GWIDI_MIDI_PARSER_GWIDIMIDIDATA_H
+#define GWIDI_MIDI_PARSER_GWIDIMIDIDATA_H
 
 #include <vector>
 #include <string>
@@ -28,14 +28,14 @@ struct Track {
 
 
 // TODO: Rename GwidiData to GwidiMidiData
-class GwidiData {
+class GwidiMidiData {
 public:
     using TickMapType = std::map<double, std::vector<Note>>;
 
-    GwidiData() = default;
+    GwidiMidiData() = default;
 
-    explicit GwidiData(const std::vector<Track> &tracks);
-    explicit GwidiData(std::vector<Track> &&tracks);
+    explicit GwidiMidiData(const std::vector<Track> &tracks);
+    explicit GwidiMidiData(std::vector<Track> &&tracks);
     void assignNotes(int track, const std::vector<Note> &notes);
     void addTrack(std::string instrument, std::string track_name, const std::vector<Note> &notes, double trackDurationInSeconds);
     void addNote(int track, Note &note);
@@ -59,11 +59,13 @@ public:
     }
 
     void writeToFile(const std::string &filename);
-    static GwidiData *readFromFile(const std::string &filename);
-    bool operator==(const GwidiData &rhs) const;
+    static GwidiMidiData *readFromFile(const std::string &filename);
+    bool operator==(const GwidiMidiData &rhs) const;
     double longestTrackDuration();
 
 private:
+    friend class GwidiDataConverter;
+
     std::vector<Track> tracks;
     double tempo{0.0};
     double tempoMicro{0.0};
@@ -73,4 +75,4 @@ private:
 };
 
 }
-#endif //GWIDI_MIDI_PARSER_GWIDIDATA_H
+#endif //GWIDI_MIDI_PARSER_GWIDIMIDIDATA_H

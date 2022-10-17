@@ -1,40 +1,40 @@
-#include "GwidiData.h"
+#include "GwidiMidiData.h"
 #include "spdlog/spdlog.h"
 #include <fstream>
 
 namespace gwidi::data::midi {
 
-GwidiData::GwidiData(const std::vector<Track> &tracks) {
+GwidiMidiData::GwidiMidiData(const std::vector<Track> &tracks) {
     this->tracks.clear();
     for (auto &t: tracks) {
         this->tracks.emplace_back(Track(t));
     }
 }
 
-GwidiData::GwidiData(std::vector<Track> &&tracks) {
+GwidiMidiData::GwidiMidiData(std::vector<Track> &&tracks) {
     this->tracks = std::move(tracks);
 }
 
-void GwidiData::assignNotes(int track, const std::vector<Note> &in_notes) {
+void GwidiMidiData::assignNotes(int track, const std::vector<Note> &in_notes) {
     this->tracks[track] = Track();
     for (auto &note: in_notes) {
         this->tracks[track].notes.emplace_back(Note(note));
     }
 }
 
-void GwidiData::addNote(int track, Note &note) {
+void GwidiMidiData::addNote(int track, Note &note) {
     if (track >= 0 && track < this->tracks.size()) {
         this->tracks[track].notes.emplace_back(Note(note));
     }
 }
 
-void GwidiData::assignTempo(double t, double tm) {
+void GwidiMidiData::assignTempo(double t, double tm) {
     this->tempo = t;
     this->tempoMicro = tm;
 }
 
-void GwidiData::addTrack(std::string instrument, std::string track_name, const std::vector<Note> &notes,
-                         double trackDurationInSeconds) {
+void GwidiMidiData::addTrack(std::string instrument, std::string track_name, const std::vector<Note> &notes,
+                             double trackDurationInSeconds) {
     this->tracks.emplace_back(Track{
             std::vector<Note>(),
             std::move(instrument),
@@ -47,7 +47,7 @@ void GwidiData::addTrack(std::string instrument, std::string track_name, const s
 }
 
 // TODO: Rename GwidiData to GwidiMidiData
-void GwidiData::fillTickMap() {
+void GwidiMidiData::fillTickMap() {
     tickMap.clear();
 
     // Assume 1 track, due to chosen_track options in the midi parsing
@@ -62,7 +62,7 @@ void GwidiData::fillTickMap() {
     }
 }
 
-bool GwidiData::operator==(const GwidiData &rhs) const {
+bool GwidiMidiData::operator==(const GwidiMidiData &rhs) const {
     if (tracks.size() != rhs.tracks.size()) {
         return false;
     }
@@ -107,7 +107,7 @@ bool GwidiData::operator==(const GwidiData &rhs) const {
     return true;
 }
 
-double GwidiData::longestTrackDuration() {
+double GwidiMidiData::longestTrackDuration() {
     double longest{0};
     for (auto &t: tracks) {
         if (t.durationInSeconds > longest) {
@@ -118,7 +118,7 @@ double GwidiData::longestTrackDuration() {
 }
 
 
-void GwidiData::writeToFile(const std::string &filename) {
+void GwidiMidiData::writeToFile(const std::string &filename) {
     std::ofstream out;
     out.open(filename, std::ios::out | std::ios::binary);
 
@@ -163,8 +163,8 @@ void GwidiData::writeToFile(const std::string &filename) {
     out.close();
 }
 
-GwidiData *GwidiData::readFromFile(const std::string &filename) {
-    auto outData = new GwidiData();
+GwidiMidiData *GwidiMidiData::readFromFile(const std::string &filename) {
+    auto outData = new GwidiMidiData();
     std::ifstream in;
     in.open(filename, std::ios::in | std::ios::binary);
 

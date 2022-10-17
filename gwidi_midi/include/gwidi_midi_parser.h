@@ -1,7 +1,7 @@
 #ifndef GWIDI_MIDI_PARSER_GWIDI_MIDI_PARSER_H
 #define GWIDI_MIDI_PARSER_GWIDI_MIDI_PARSER_H
 
-#include "GwidiData.h"
+#include "GwidiMidiData.h"
 
 namespace gwidi::midi {
 
@@ -34,7 +34,7 @@ public:
 
     // Used to let users choose which track to pick when midi importing (passed in MidiParseOptions)
     TrackMeta getTrackMetaMap(const char* midiName);
-    gwidi::data::midi::GwidiData* readFile(const char* midiName, const MidiParseOptions& options);
+    gwidi::data::midi::GwidiMidiData* readFile(const char* midiName, const MidiParseOptions& options);
 };
 
 

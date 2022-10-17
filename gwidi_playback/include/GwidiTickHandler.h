@@ -3,7 +3,7 @@
 
 #include "GwidiOptions2.h"
 
-#include "GwidiData.h"
+#include "GwidiMidiData.h"
 #include "GwidiGuiData.h"
 #include "gwidi_midi_parser.h"
 
@@ -37,7 +37,7 @@ class GwidiTickHandler {
 public:
     using WrapperTickMapType = std::map<double, std::vector<Note>>;
     void setOptions(GwidiTickOptions options);
-    void assignData(gwidi::data::midi::GwidiData* data);
+    void assignData(gwidi::data::midi::GwidiMidiData* data);
     void assignData(gwidi::data::gui::GwidiGuiData* data);
     GwidiAction* processTick(double delta);
 
@@ -56,7 +56,7 @@ private:
     Note fromNote(gwidi::data::gui::Note &note);
 
     GwidiTickOptions options;
-    gwidi::data::midi::GwidiData* m_midi_data{nullptr};
+    gwidi::data::midi::GwidiMidiData* m_midi_data{nullptr};
     gwidi::data::gui::GwidiGuiData* m_gui_data{nullptr};
     WrapperTickMapType m_tickMap;
     double cur_time{0.0};

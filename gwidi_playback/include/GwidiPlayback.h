@@ -21,7 +21,7 @@ public:
     explicit GwidiPlayback(const std::string &instrument);
     ~GwidiPlayback();
 
-    void assignData(gwidi::data::midi::GwidiData* data, gwidi::tick::GwidiTickOptions options);
+    void assignData(gwidi::data::midi::GwidiMidiData* data, gwidi::tick::GwidiTickOptions options);
     void assignData(gwidi::data::gui::GwidiGuiData* data, gwidi::tick::GwidiTickOptions options);
 
     void play();
