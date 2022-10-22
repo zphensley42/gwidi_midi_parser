@@ -77,6 +77,7 @@ double GwidiPlayback::getDelta(std::chrono::milliseconds startTime) {
 }
 
 void GwidiPlayback::play() {
+    m_pausedCv.notify_all();
     std::lock_guard<std::mutex> lock(m_playbackThreadMutex);
     switch(m_threadState) {
         case STOPPED: {
@@ -112,6 +113,7 @@ void GwidiPlayback::pause() {
 }
 
 void GwidiPlayback::stop() {
+    m_pausedCv.notify_all();
     std::unique_lock<std::mutex> lock(m_playbackThreadMutex);
     switch(m_threadState) {
         case STOPPED: {
@@ -133,12 +135,23 @@ void GwidiPlayback::thread_cb() {
         return;
     }
 
+    // TODO: Wait/notify on state when it moves to paused
     auto startTime = curTime();
     while(m_threadState != STOPPED) {
+        if(m_threadState == PAUSED) {
+            std::unique_lock<std::mutex> lock(m_playbackThreadMutex);
+            m_pausedCv.wait(lock);
+            startTime = curTime();  // reset the start time to get the proper delta after resuming from a pause
+        }
         auto delta = getDelta(startTime);
         startTime = curTime();
 
         auto action = m_handler.processTick(delta);
+
+        if(m_tickCbFn) {
+            m_tickCbFn(m_handler.curTime());
+        }
+
         spdlog::debug("BEGIN Action notes-------");
         spdlog::debug("Chosen octave: {}", action->chosen_octave);
         swapOctaves(action);

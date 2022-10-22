@@ -45,6 +45,10 @@ public:
         return m_gui_data != nullptr || m_midi_data != nullptr;
     }
 
+    inline double curTime() {
+        return cur_time;
+    }
+
 private:
     double currentTickMapFloorKey();
 

@@ -69,8 +69,20 @@ void testGui() {
 
     playback.play();
     // for now, don't hook up controls
-    while(playback.isPlaying()) {
+    int count = 0;
+    while(!playback.isStopped()) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        if(count == 1) {
+            playback.pause();
+            assert(playback.isPaused());
+        }
+
+        if(count == 10) {
+            playback.play();
+            assert(playback.isPlaying());
+        }
+        count++;
     }
 
     delete data;    // we COULD delete this earlier, after the assignData -> the tickmap in playback is a copy
@@ -80,7 +92,7 @@ int main() {
 
     spdlog::set_level(spdlog::level::debug);
 
-    testMidi();
+//    testMidi();
     testGui();
 
     return 0;

@@ -9,20 +9,28 @@
 
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include "GwidiTickHandler.h"
 #include <chrono>
 #include <string>
+#include <functional>
 
 namespace gwidi::playback {
 
 class GwidiPlayback {
 public:
+    using TickCbFn = std::function<void(double)>;
+
     GwidiPlayback() : GwidiPlayback(gwidi::data::gui::nameForInstrument(gwidi::data::gui::Instrument::HARP)) {}
     explicit GwidiPlayback(const std::string &instrument);
     ~GwidiPlayback();
 
     void assignData(gwidi::data::midi::GwidiMidiData* data, gwidi::tick::GwidiTickOptions options);
     void assignData(gwidi::data::gui::GwidiGuiData* data, gwidi::tick::GwidiTickOptions options);
+
+    inline void setTickCb(TickCbFn cb) {
+        m_tickCbFn = cb;
+    }
 
     void play();
     void pause();
@@ -39,6 +47,8 @@ public:
     }
 
 private:
+    TickCbFn m_tickCbFn;
+
     void thread_cb();
 
     void sendInput(const std::string &key);
@@ -62,6 +72,7 @@ private:
     };
     std::thread m_playbackThread;
     PlayThreadState m_threadState{STOPPED};
+    std::condition_variable m_pausedCv;
     std::mutex m_playbackThreadMutex;
 
     gwidi::tick::GwidiTickHandler m_handler;
