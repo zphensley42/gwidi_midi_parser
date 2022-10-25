@@ -222,4 +222,13 @@ void GwidiTickHandler::setOptions(GwidiTickOptions o) {
     this->options = o;
 }
 
+void GwidiTickHandler::reset() {
+    cur_time = 0;
+    for(auto &entry : m_tickMap) {
+        for(auto &n : entry.second) {
+            n.activated = false;
+        }
+    }
+}
+
 }

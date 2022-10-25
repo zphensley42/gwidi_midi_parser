@@ -41,6 +41,8 @@ public:
     void assignData(gwidi::data::gui::GwidiGuiData* data);
     GwidiAction* processTick(double delta);
 
+    void reset();
+
     inline bool hasData() {
         return m_gui_data != nullptr || m_midi_data != nullptr;
     }

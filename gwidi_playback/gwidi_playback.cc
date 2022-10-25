@@ -116,7 +116,7 @@ void GwidiPlayback::pause() {
 
 void GwidiPlayback::stop() {
     m_pausedCv.notify_all();
-    std::unique_lock<std::mutex> lock(m_playbackThreadMutex);
+    std::lock_guard<std::mutex> lock(m_playbackThreadMutex);
     switch(m_threadState) {
         case STOPPED: {
             return;
@@ -124,8 +124,6 @@ void GwidiPlayback::stop() {
         case STARTED:
         case PAUSED: {
             m_threadState = STOPPED;
-            lock.unlock();
-            m_playbackThread.join();
             return;
         }
     }
@@ -166,6 +164,12 @@ void GwidiPlayback::thread_cb() {
             continue;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds (10));
+    }
+
+    // Reset for the next playback
+    m_handler.reset();
+    if(m_playEndedCbFn) {
+        m_playEndedCbFn();
     }
 }
 

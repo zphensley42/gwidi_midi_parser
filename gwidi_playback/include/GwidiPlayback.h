@@ -21,6 +21,7 @@ class GwidiPlayback {
 public:
     using TickCbFn = std::function<void(double)>;
     using PlayCbFn = std::function<void(gwidi::tick::GwidiAction*)>;
+    using PlayEndedCbFn = std::function<void()>;
 
     GwidiPlayback() : GwidiPlayback(gwidi::data::gui::nameForInstrument(gwidi::data::gui::Instrument::HARP)) {}
     explicit GwidiPlayback(const std::string &instrument);
@@ -35,6 +36,10 @@ public:
 
     inline void setPlayCb(PlayCbFn cb) {
         m_playCbFn = cb;
+    }
+
+    inline void setPlayEndedCb(PlayEndedCbFn cb) {
+        m_playEndedCbFn = cb;
     }
 
     void setRealInput(bool real);
@@ -56,6 +61,7 @@ public:
 private:
     TickCbFn m_tickCbFn;
     PlayCbFn m_playCbFn;
+    PlayEndedCbFn m_playEndedCbFn;
 
     void thread_cb();
 
