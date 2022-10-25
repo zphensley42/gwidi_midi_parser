@@ -187,6 +187,9 @@ void GwidiPlayback::swapOctaves(gwidi::tick::GwidiAction *action) {
 }
 
 void GwidiPlayback::playNotes(gwidi::tick::GwidiAction *action) {
+    if(m_playCbFn) {
+        m_playCbFn(action);
+    }
     for(auto &n : action->notes) {
         spdlog::debug("note key: {}, start_offset: {}, duration: {}", n->key, n->start_offset, n->duration);
 
