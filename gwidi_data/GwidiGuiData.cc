@@ -24,8 +24,15 @@ Instrument instrumentForName(const char* instr) {
 }
 
 GwidiGuiData::GwidiGuiData(gwidi::data::gui::Instrument instr) : instrument{instr} {
-    m_tempo = options2::GwidiOptions2::getInstance().tempo();
     addMeasure();
+}
+
+double GwidiGuiData::getTempo() const {
+    // If we are not assigned a specific tempo, fallback to our option's tempo
+    if(m_tempo <= 0) {
+        return options2::GwidiOptions2::getInstance().tempo();
+    }
+    return m_tempo;
 }
 
 void GwidiGuiData::addMeasure() {
@@ -93,7 +100,7 @@ double GwidiGuiData::timeIndexToTickOffset(Note* note) const {
         return 0.0;
     }
     int num_notes_per_measure = options2::GwidiOptions2::getInstance().notesPerMeasure();
-    double sixteenthNoteTPQ = 15 / m_tempo;
+    double sixteenthNoteTPQ = 15 / getTempo();
     int note_time = (note->measure * num_notes_per_measure) + (note->time);
 
     return note_time == 0 ? 0 : note_time * sixteenthNoteTPQ;

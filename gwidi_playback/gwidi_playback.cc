@@ -38,7 +38,9 @@ void GwidiPlayback::assignData(gwidi::data::gui::GwidiGuiData* data, gwidi::tick
 }
 
 void GwidiPlayback::sendInput(const std::string &key) {
-    m_input.sendInput(key);
+    if(m_realInput) {
+        m_input.sendInput(key);
+    }
 }
 
 void GwidiPlayback::swapOctaveUp() {
@@ -195,6 +197,10 @@ void GwidiPlayback::playNotes(gwidi::tick::GwidiAction *action) {
             sendInput(n->key);
         }
     }
+}
+
+void GwidiPlayback::setRealInput(bool real) {
+    m_realInput = real;
 }
 
 }

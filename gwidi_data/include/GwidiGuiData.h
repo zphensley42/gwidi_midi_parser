@@ -59,9 +59,7 @@ public:
         return m_tickMap;
     }
 
-    inline double getTempo() {
-        return m_tempo;
-    }
+    double getTempo() const;
 
     // TODO: Need to be able to convert this data to GwidiData (at least in 2 pieces: tick map for playback and data for saving)
     // TODO: Need to be able to convert GwidiData to this type (for loading and MIDI import)

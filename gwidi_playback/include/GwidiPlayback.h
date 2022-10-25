@@ -32,6 +32,8 @@ public:
         m_tickCbFn = cb;
     }
 
+    void setRealInput(bool real);
+
     void play();
     void pause();
     void stop();
@@ -76,6 +78,8 @@ private:
     std::mutex m_playbackThreadMutex;
 
     gwidi::tick::GwidiTickHandler m_handler;
+
+    bool m_realInput{true};
 };
 
 }
