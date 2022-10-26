@@ -17,6 +17,13 @@ struct Note {
     std::string instrument{};
     int track{0};
     std::string key{};
+
+    std::size_t hash() const {
+        std::size_t h1 = std::hash<double>{}(start_offset);
+        std::size_t h2 = std::hash<int>{}(octave);
+        std::size_t h3 = std::hash<std::string>{}(key);
+        return h1 ^ (h2 << 1) ^ (h3 << 2);
+    }
 };
 
 struct Track {

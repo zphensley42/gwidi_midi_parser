@@ -23,6 +23,14 @@ struct Note {
     int time{0};
     std::string key{};
     bool activated{false};
+
+    std::size_t hash() const {
+        std::size_t h1 = std::hash<double>{}(time);
+        std::size_t h2 = std::hash<double>{}(measure);
+        std::size_t h3 = std::hash<int>{}(octave);
+        std::size_t h4 = std::hash<std::string>{}(key);
+        return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+    }
 };
 
 struct Octave {

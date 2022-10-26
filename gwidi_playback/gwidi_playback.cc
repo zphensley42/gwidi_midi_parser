@@ -195,13 +195,13 @@ void GwidiPlayback::playNotes(gwidi::tick::GwidiAction *action) {
         m_playCbFn(action);
     }
     for(auto &n : action->notes) {
-        spdlog::debug("note key: {}, start_offset: {}, duration: {}", n->key, n->start_offset, n->duration);
+        spdlog::debug("note key: {}, start_offset: {}, octave: {}", n.key, n.start_offset, n.octave);
 
         // for testing, react to the actions
-        if(n->octave == action->chosen_octave) {
+        if(n.octave == action->chosen_octave) {
             // pick our key from the note
-            spdlog::info("Sending input key: {}", n->key);
-            sendInput(n->key);
+            spdlog::info("Sending input key: {}", n.key);
+            sendInput(n.key);
         }
     }
 }

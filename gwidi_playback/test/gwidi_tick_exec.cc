@@ -92,7 +92,7 @@ int main() {
 
     spdlog::set_level(spdlog::level::debug);
 
-//    testMidi();
+    testMidi();
     testGui();
 
     return 0;
