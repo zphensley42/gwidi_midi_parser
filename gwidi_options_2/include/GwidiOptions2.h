@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <functional>
 
 namespace gwidi {
 namespace options2 {
@@ -34,7 +35,7 @@ public:
     static GwidiOptions2 &getInstance();
 
     explicit operator std::string() const;
-    inline std::map<std::string, Instrument>& getMapping() {
+    inline Mapping& getMapping() {
         return instruments;
     }
     Note optionsNoteFromMidiNote(const std::string &instrument, int in_midiOctave, const std::string &letter);
@@ -52,6 +53,23 @@ private:
 
     std::map<std::string, Instrument> instruments;
     double m_tempo{0.0};
+};
+
+class HotkeyOptions {
+public:
+    struct HotKey {
+        int key; // int == code from input-event-codes assigned to the function
+        std::function<void()> cb;
+    };
+private:
+    static int keyNameToCode(const std::string &key); // probably just use a local mapping of the keys available
+
+    HotkeyOptions();
+    void parseConfig();
+
+    // the list of keys associated with a hotkey all need to be activated at the same time to determine that the hotkey should call its cb() function
+    std::map<std::string, std::vector<HotKey>> m_hotkeyMapping; // mapping is against names in hotkeys (play, pause, stop, etc)
+    static std::map<std::string, int> m_keyNameMapping;
 };
 
 }

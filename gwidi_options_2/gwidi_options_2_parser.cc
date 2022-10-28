@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <spdlog/spdlog.h>
+#include <linux/input-event-codes.h>
 
 
 #if defined(WIN32) || defined(WIN64)
@@ -124,5 +125,35 @@ double GwidiOptions2::tempo() {
 }
 
 
+
+std::map<std::string, int> HotkeyOptions::m_keyNameMapping{};
+
+HotkeyOptions::HotkeyOptions() {
+    char c = '0';
+    for(auto i = KEY_1; i <= KEY_0; i++) {
+        std::string s;
+        s += c;
+        m_keyNameMapping[s] = i;
+        c++;
+    }
+
+    c = 'a';
+    for(auto i = KEY_A; i <= KEY_Z; i++) {
+        std::string s;
+        s += c;
+        m_keyNameMapping[s] = i;
+        c++;
+    }
+
+    // TODO: Add the other misc. keys (shift, ctrl, space, enter, esc, etc.)
+}
+
+int HotkeyOptions::keyNameToCode(const std::string& key) {
+    return m_keyNameMapping[key];
+}
+
+void HotkeyOptions::parseConfig() {
+    // TODO: Open hotkeys.json, build our mapping from it
+}
 }
 }

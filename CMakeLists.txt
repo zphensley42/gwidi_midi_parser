@@ -31,6 +31,11 @@ if(NOT TARGET gwidi_options_2)
     find_package(gwidi_options_2 REQUIRED)
 endif()
 
+if(NOT TARGET gwidi_hotkey)
+    set(gwidi_hotkey_DIR ${CMAKE_CURRENT_LIST_DIR}/gwidi_hotkey)
+    find_package(gwidi_hotkey REQUIRED)
+endif()
+
 if(BUILD_TESTS)
     message("BUILDING TESTS")
     add_subdirectory(gwidi_data/test)
@@ -38,6 +43,7 @@ if(BUILD_TESTS)
     add_subdirectory(gwidi_options_2/test)
     add_subdirectory(gwidi_midi/test)
     add_subdirectory(gwidi_playback/test)
+    add_subdirectory(gwidi_hotkey/test)
 endif()
 
 
@@ -46,7 +52,7 @@ set(INSTALL_HEADER_DEST "include/gwidi")
 set(INSTALL_BIN_DEST "bin/gwidi")
 
 install(
-        TARGETS ${gwidi_options_LIBRARIES} ${gwidi_data_LIBRARIES} ${gwidi_midi_LIBRARIES} ${gwidi_tick_LIBRARIES} ${gwidi_options_2_LIBRARIES}
+        TARGETS ${gwidi_options_LIBRARIES} ${gwidi_data_LIBRARIES} ${gwidi_midi_LIBRARIES} ${gwidi_tick_LIBRARIES} ${gwidi_options_2_LIBRARIES} ${gwidi_hotkey_LIBRARIES}
         DESTINATION ${INSTALL_LIB_DEST}
 )
 
@@ -77,5 +83,10 @@ install(
 
 install(
         FILES ${linux_send_input_INCLUDE_DIRS}/LinuxSendInput.h
+        DESTINATION ${INSTALL_HEADER_DEST}
+)
+
+install(
+        FILES ${gwidi_hotkey_INCLUDE_DIRS}/gwidi_hotkey.h
         DESTINATION ${INSTALL_HEADER_DEST}
 )
