@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <string_view>
 
 namespace gwidi {
 namespace options2 {
@@ -58,17 +59,28 @@ private:
 class HotkeyOptions {
 public:
     struct HotKey {
-        int key; // int == code from input-event-codes assigned to the function
-        std::function<void()> cb;
+        std::string name;
+        std::vector<int> keys; // int == code from input-event-codes assigned to the function
     };
+
+    static std::size_t hashFromKeys(const std::vector<int> &keys);
+    static std::string codeToKeyName(int code);
+
+    static HotkeyOptions& getInstance();
+    inline std::map<std::size_t, HotKey>& getHotkeyMapping() {
+        return m_hotkeyMapping;
+    }
 private:
     static int keyNameToCode(const std::string &key); // probably just use a local mapping of the keys available
 
     HotkeyOptions();
     void parseConfig();
 
+    // For quick indexing in the detection, the map should be the keys (composite) to the action (name of the hotkey)
+    // the config should still list the keys such that their index can be created, however
+
     // the list of keys associated with a hotkey all need to be activated at the same time to determine that the hotkey should call its cb() function
-    std::map<std::string, std::vector<HotKey>> m_hotkeyMapping; // mapping is against names in hotkeys (play, pause, stop, etc)
+    std::map<std::size_t, HotKey> m_hotkeyMapping; // mapping is against names in hotkeys (play, pause, stop, etc)
     static std::map<std::string, int> m_keyNameMapping;
 };
 

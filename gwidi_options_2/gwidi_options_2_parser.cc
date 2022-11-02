@@ -4,6 +4,7 @@
 #include <sstream>
 #include <spdlog/spdlog.h>
 #include <linux/input-event-codes.h>
+#include <strutil.h>
 
 
 #if defined(WIN32) || defined(WIN64)
@@ -129,23 +130,60 @@ double GwidiOptions2::tempo() {
 std::map<std::string, int> HotkeyOptions::m_keyNameMapping{};
 
 HotkeyOptions::HotkeyOptions() {
-    char c = '0';
-    for(auto i = KEY_1; i <= KEY_0; i++) {
-        std::string s;
-        s += c;
-        m_keyNameMapping[s] = i;
-        c++;
-    }
+    // ASCII codes go from 0 -> 9 (48 -> 57)
+    // Linux input codes go from 1 -> 0 (2 -> 11)
+    // There isn't a straightforward approach to converting, just make it explicit
+    m_keyNameMapping["0"] = KEY_0;
+    m_keyNameMapping["1"] = KEY_1;
+    m_keyNameMapping["2"] = KEY_2;
+    m_keyNameMapping["3"] = KEY_3;
+    m_keyNameMapping["4"] = KEY_4;
+    m_keyNameMapping["5"] = KEY_5;
+    m_keyNameMapping["6"] = KEY_6;
+    m_keyNameMapping["7"] = KEY_7;
+    m_keyNameMapping["8"] = KEY_8;
+    m_keyNameMapping["9"] = KEY_9;
 
-    c = 'a';
-    for(auto i = KEY_A; i <= KEY_Z; i++) {
-        std::string s;
-        s += c;
-        m_keyNameMapping[s] = i;
-        c++;
-    }
+    // Same deal as above, ASCII -> Linux input doesn't match the same code format because of the numbers
+    m_keyNameMapping["a"] = KEY_A;
+    m_keyNameMapping["b"] = KEY_B;
+    m_keyNameMapping["c"] = KEY_C;
+    m_keyNameMapping["d"] = KEY_D;
+    m_keyNameMapping["e"] = KEY_E;
+    m_keyNameMapping["f"] = KEY_F;
+    m_keyNameMapping["g"] = KEY_G;
+    m_keyNameMapping["h"] = KEY_H;
+    m_keyNameMapping["i"] = KEY_I;
+    m_keyNameMapping["j"] = KEY_J;
+    m_keyNameMapping["k"] = KEY_K;
+    m_keyNameMapping["l"] = KEY_L;
+    m_keyNameMapping["m"] = KEY_M;
+    m_keyNameMapping["n"] = KEY_N;
+    m_keyNameMapping["o"] = KEY_O;
+    m_keyNameMapping["p"] = KEY_P;
+    m_keyNameMapping["q"] = KEY_Q;
+    m_keyNameMapping["r"] = KEY_R;
+    m_keyNameMapping["s"] = KEY_S;
+    m_keyNameMapping["t"] = KEY_T;
+    m_keyNameMapping["u"] = KEY_U;
+    m_keyNameMapping["v"] = KEY_V;
+    m_keyNameMapping["w"] = KEY_W;
+    m_keyNameMapping["x"] = KEY_X;
+    m_keyNameMapping["y"] = KEY_Y;
+    m_keyNameMapping["z"] = KEY_Z;
 
-    // TODO: Add the other misc. keys (shift, ctrl, space, enter, esc, etc.)
+
+    // Add the other misc. keys (shift, ctrl, space, enter, esc, etc.)
+    m_keyNameMapping["left shift"] = KEY_LEFTSHIFT;
+    m_keyNameMapping["left ctrl"] = KEY_LEFTCTRL;
+    m_keyNameMapping["left alt"] = KEY_LEFTALT;
+    m_keyNameMapping["right shift"] = KEY_RIGHTSHIFT;
+    m_keyNameMapping["right ctrl"] = KEY_RIGHTCTRL;
+    m_keyNameMapping["right alt"] = KEY_RIGHTALT;
+    m_keyNameMapping["space"] = KEY_SPACE;
+    m_keyNameMapping["enter"] = KEY_ENTER;
+    m_keyNameMapping["escape"] = KEY_ESC;
+    parseConfig();
 }
 
 int HotkeyOptions::keyNameToCode(const std::string& key) {
@@ -153,7 +191,54 @@ int HotkeyOptions::keyNameToCode(const std::string& key) {
 }
 
 void HotkeyOptions::parseConfig() {
-    // TODO: Open hotkeys.json, build our mapping from it
+    std::stringstream ss;
+    ss << CONFIG_DIR << "/hotkeys.json";
+    std::ifstream instrumentsConfigFile(ss.str());
+    json instrumentsJson;
+    instrumentsConfigFile >> instrumentsJson;
+
+    for(auto &entry : instrumentsJson.items()) {
+        const auto& name = entry.key();
+        auto keys = entry.value().get<std::string>();
+
+        std::vector<int> keysVector;
+        auto split = strutil::ss::splitSV(keys, "+");
+        for(auto &keyName : split) {
+            keysVector.emplace_back(keyNameToCode(keyName));
+        }
+        auto keysHash = hashFromKeys(keysVector);
+        m_hotkeyMapping[keysHash] = HotKey{
+            name,
+            keysVector
+        };
+    }
 }
+
+HotkeyOptions &HotkeyOptions::getInstance() {
+    static HotkeyOptions options;
+    return options;
+}
+
+std::size_t HotkeyOptions::hashFromKeys(const std::vector<int> &keys) {
+    std::size_t retH{0};
+    int index = 0;
+    for(auto &k : keys) {
+        std::size_t h = std::hash<int>{}(k);
+        retH = retH ^ (h << index);
+        index++;
+    }
+    return retH;
+}
+
+std::string HotkeyOptions::codeToKeyName(int code) {
+    auto it = std::find_if(m_keyNameMapping.begin(), m_keyNameMapping.end(), [code](std::pair<std::string, int> pair){
+        return pair.second == code;
+    });
+    if(it != m_keyNameMapping.end()) {
+        return it->first;
+    }
+    return "";
+}
+
 }
 }

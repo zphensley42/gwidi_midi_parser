@@ -44,6 +44,7 @@ if(BUILD_TESTS)
     add_subdirectory(gwidi_midi/test)
     add_subdirectory(gwidi_playback/test)
     add_subdirectory(gwidi_hotkey/test)
+    add_subdirectory(strutil/test)
 endif()
 
 

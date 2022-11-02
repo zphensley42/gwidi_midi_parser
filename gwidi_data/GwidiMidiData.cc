@@ -46,7 +46,6 @@ void GwidiMidiData::addTrack(std::string instrument, std::string track_name, con
     }
 }
 
-// TODO: Rename GwidiData to GwidiMidiData
 void GwidiMidiData::fillTickMap() {
     tickMap.clear();
 
