@@ -5,6 +5,7 @@
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <memory>
 #include "GwidiOptions2.h"
 
 namespace gwidi::hotkey {
@@ -42,7 +43,7 @@ private:
     static int m_timeoutMs;
 
     std::atomic_bool m_thAlive{false};
-    std::thread m_th;
+    std::shared_ptr<std::thread> m_th;
 
     std::map<std::string, std::function<void()>> m_hotkeyCbs;
 

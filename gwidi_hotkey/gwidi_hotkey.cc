@@ -22,9 +22,9 @@ bool supports_key_events(const int &fd) {
 }
 
 GwidiHotkey::~GwidiHotkey() {
-    if(m_thAlive.load() && m_th.joinable()) {
+    if(m_thAlive.load() && m_th->joinable()) {
         m_thAlive.store(false);
-        m_th.join();
+        m_th->join();
     }
     else {
         m_thAlive.store(false);
@@ -63,7 +63,7 @@ void GwidiHotkey::stopListening() {
 void GwidiHotkey::beginListening() {
     m_thAlive.store(true);
 
-    m_th = std::thread([this] {
+    m_th = std::make_shared<std::thread>([this] {
         findInputDevices();
 
         // Requires root
@@ -130,6 +130,7 @@ void GwidiHotkey::beginListening() {
             close(pfd.fd);
         }
     });
+    m_th->detach();
 }
 
 void GwidiHotkey::hotkeyDetected(options2::HotkeyOptions::HotKey &hotKey) {
