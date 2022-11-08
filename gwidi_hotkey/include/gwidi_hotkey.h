@@ -10,14 +10,44 @@
 
 namespace gwidi::hotkey {
 
-class GwidiHotkey {
+class GwidiHotkeyAssignmentPressDetector {
 public:
     struct DetectedKey {
         std::string name;
         int key;
     };
 
-    // TODO: Listen on a thread? Or should the owner call this on a thread? (maybe the latter is okay)
+    void beginListening();
+    void stopListening();
+
+    inline bool isAlive() {
+        return m_thAlive.load();
+    }
+
+    // These 2 methods can be used in combination to initiate listening / listing keys that are pressed from the moment we ask to the moment we retrieve the list
+    void clearPressedKeys();
+    inline void assignPressedKeyListener(std::function<void()> cb) {
+        m_pressedKeyCb = cb;
+    }
+    std::vector<DetectedKey> pressedKeys();
+
+    ~GwidiHotkeyAssignmentPressDetector();
+
+private:
+    void findInputDevices();
+
+    std::vector<pollfd> m_inputDevices;
+    static int m_timeoutMs;
+
+    std::atomic_bool m_thAlive{false};
+    std::shared_ptr<std::thread> m_th;
+
+    std::vector<int> m_tempPressedKeys;
+    std::function<void()> m_pressedKeyCb;
+};
+
+class GwidiHotkey {
+public:
     void beginListening();
     void stopListening();
 
@@ -26,13 +56,6 @@ public:
     }
 
     void assignHotkeyFunction(const std::string& name, std::function<void()> cb);
-
-    // These 2 methods can be used in combination to initiate listening / listing keys that are pressed from the moment we ask to the moment we retrieve the list
-    void clearPressedKeys();
-    inline void assignPressedKeyListener(std::function<void()> cb) {
-        m_pressedKeyCb = cb;
-    }
-    std::vector<DetectedKey> pressedKeys();
 
     ~GwidiHotkey();
 private:
@@ -46,9 +69,6 @@ private:
     std::shared_ptr<std::thread> m_th;
 
     std::map<std::string, std::function<void()>> m_hotkeyCbs;
-
-    std::vector<int> m_tempPressedKeys;
-    std::function<void()> m_pressedKeyCb;
 };
 
 }
