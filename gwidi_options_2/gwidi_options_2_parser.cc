@@ -191,13 +191,15 @@ int HotkeyOptions::keyNameToCode(const std::string& key) {
 }
 
 void HotkeyOptions::parseConfig() {
+    m_hotkeyMapping.clear();
+
     std::stringstream ss;
     ss << CONFIG_DIR << "/hotkeys.json";
-    std::ifstream instrumentsConfigFile(ss.str());
-    json instrumentsJson;
-    instrumentsConfigFile >> instrumentsJson;
+    std::ifstream hotkeysConfigFile(ss.str());
+    json hotkeysJson;
+    hotkeysConfigFile >> hotkeysJson;
 
-    for(auto &entry : instrumentsJson.items()) {
+    for(auto &entry : hotkeysJson.items()) {
         const auto& name = entry.key();
         auto keys = entry.value().get<std::string>();
 
@@ -238,6 +240,48 @@ std::string HotkeyOptions::codeToKeyName(int code) {
         return it->first;
     }
     return "";
+}
+
+void HotkeyOptions::updateMapping(const HotKey& key) {
+    auto it = std::find_if(m_hotkeyMapping.begin(), m_hotkeyMapping.end(), [&key](const std::pair<std::size_t, HotkeyOptions::HotKey>& entry){
+        return entry.second.name == key.name;
+    });
+    // First, remove any existing entries matching the hotkey name
+    if(it != m_hotkeyMapping.end()) {
+        m_hotkeyMapping.erase(it);
+    }
+
+    // Then, add our new hotkey
+    auto keysHash = hashFromKeys(key.keys);
+    m_hotkeyMapping[keysHash] = key;
+
+    storeConfig();
+}
+
+void HotkeyOptions::storeConfig() {
+    json hotkeysJson;
+    for(auto &entry : m_hotkeyMapping) {
+        std::stringstream ss;
+        bool first = true;
+        for(auto &k : entry.second.keys) {
+            if(!first) {
+                ss << "+";
+            }
+            ss << codeToKeyName(k);
+            first = false;
+        }
+        hotkeysJson[entry.second.name] = ss.str();
+    }
+
+    std::stringstream outName;
+    outName << CONFIG_DIR << "/hotkeys.json";
+    std::ofstream hotkeysJsonFile(outName.str());
+    hotkeysJsonFile << hotkeysJson;
+    hotkeysJsonFile.close();
+}
+
+void HotkeyOptions::reloadConfig() {
+    parseConfig();
 }
 
 }

@@ -65,16 +65,20 @@ public:
 
     static std::size_t hashFromKeys(const std::vector<int> &keys);
     static std::string codeToKeyName(int code);
+    static int keyNameToCode(const std::string &key); // probably just use a local mapping of the keys available
 
     static HotkeyOptions& getInstance();
     inline std::map<std::size_t, HotKey>& getHotkeyMapping() {
         return m_hotkeyMapping;
     }
+
+    void updateMapping(const HotKey& key);
+    void reloadConfig();
 private:
-    static int keyNameToCode(const std::string &key); // probably just use a local mapping of the keys available
 
     HotkeyOptions();
     void parseConfig();
+    void storeConfig();
 
     // For quick indexing in the detection, the map should be the keys (composite) to the action (name of the hotkey)
     // the config should still list the keys such that their index can be created, however
