@@ -4,26 +4,7 @@
 
 namespace gwidi::data::gui {
 
-const char* nameForInstrument(Instrument instr) {
-    static std::map<Instrument, const char*> m {
-        {Instrument::UNKNOWN, "unknown"},
-        {Instrument::HARP, "harp"},
-        {Instrument::FLUTE, "flute"},
-        {Instrument::BELL, "bell"},
-    };
-    return m[instr];
-}
-Instrument instrumentForName(const char* instr) {
-    static std::map<const char*, Instrument> m {
-            {"unknown", Instrument::UNKNOWN},
-            {"harp", Instrument::HARP},
-            {"flute", Instrument::FLUTE},
-            {"bell", Instrument::BELL},
-    };
-    return m[instr];
-}
-
-GwidiGuiData::GwidiGuiData(gwidi::data::gui::Instrument instr) : instrument{instr} {
+GwidiGuiData::GwidiGuiData(const std::string& instr) : m_instrument{instr} {
     addMeasure();
 }
 
@@ -38,7 +19,7 @@ double GwidiGuiData::getTempo() const {
 void GwidiGuiData::addMeasure() {
     // Parse our instrument options
     // Use them as the template for each measure of gui data
-    auto &options = gwidi::options2::GwidiOptions2::getInstance().getMapping()[nameForInstrument(instrument)];
+    auto &options = gwidi::options2::GwidiOptions2::getInstance().getMapping()[m_instrument];
 
     Measure measure;
     measure.num = measures.size();

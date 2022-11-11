@@ -1,0 +1,191 @@
+{
+    "octaves": [
+        {
+            "notes": [
+                {
+                    "key": "1",
+                    "letters": [
+                        "C",
+                        "C#"
+                    ],
+                    "midi_octave": 4
+                },
+                {
+                    "key": "2",
+                    "letters": [
+                        "D",
+                        "D#"
+                    ],
+                    "midi_octave": 4
+                },
+                {
+                    "key": "3",
+                    "letters": [
+                        "E"
+                    ],
+                    "midi_octave": 4
+                },
+                {
+                    "key": "4",
+                    "letters": [
+                        "F",
+                        "F#"
+                    ],
+                    "midi_octave": 4
+                },
+                {
+                    "key": "5",
+                    "letters": [
+                        "G",
+                        "G#"
+                    ],
+                    "midi_octave": 4
+                },
+                {
+                    "key": "6",
+                    "letters": [
+                        "A",
+                        "A#"
+                    ],
+                    "midi_octave": 4
+                },
+                {
+                    "key": "7",
+                    "letters": [
+                        "B"
+                    ],
+                    "midi_octave": 4
+                }
+            ],
+            "num": 0
+        },
+        {
+            "notes": [
+                {
+                    "key": "1",
+                    "letters": [
+                        "C",
+                        "C#"
+                    ],
+                    "midi_octave": 5
+                },
+                {
+                    "key": "2",
+                    "letters": [
+                        "D",
+                        "D#"
+                    ],
+                    "midi_octave": 5
+                },
+                {
+                    "key": "3",
+                    "letters": [
+                        "E"
+                    ],
+                    "midi_octave": 5
+                },
+                {
+                    "key": "4",
+                    "letters": [
+                        "F",
+                        "F#"
+                    ],
+                    "midi_octave": 5
+                },
+                {
+                    "key": "5",
+                    "letters": [
+                        "G",
+                        "G#"
+                    ],
+                    "midi_octave": 5
+                },
+                {
+                    "key": "6",
+                    "letters": [
+                        "A",
+                        "A#"
+                    ],
+                    "midi_octave": 5
+                },
+                {
+                    "key": "7",
+                    "letters": [
+                        "B"
+                    ],
+                    "midi_octave": 5
+                }
+            ],
+            "num": 1
+        },
+        {
+            "notes": [
+                {
+                    "key": "1",
+                    "letters": [
+                        "C",
+                        "C#"
+                    ],
+                    "midi_octave": 6
+                },
+                {
+                    "key": "2",
+                    "letters": [
+                        "D",
+                        "D#"
+                    ],
+                    "midi_octave": 6
+                },
+                {
+                    "key": "3",
+                    "letters": [
+                        "E"
+                    ],
+                    "midi_octave": 6
+                },
+                {
+                    "key": "4",
+                    "letters": [
+                        "F",
+                        "F#"
+                    ],
+                    "midi_octave": 6
+                },
+                {
+                    "key": "5",
+                    "letters": [
+                        "G",
+                        "G#"
+                    ],
+                    "midi_octave": 6
+                },
+                {
+                    "key": "6",
+                    "letters": [
+                        "A",
+                        "A#"
+                    ],
+                    "midi_octave": 6
+                },
+                {
+                    "key": "7",
+                    "letters": [
+                        "B"
+                    ],
+                    "midi_octave": 6
+                },
+                {
+                    "key": "8",
+                    "letters": [
+                        "C",
+                        "C#"
+                    ],
+                    "midi_octave": 7
+                }
+            ],
+            "num": 2
+        }
+    ],
+    "starting_octave": 1,
+    "supports_held_notes": false
+}

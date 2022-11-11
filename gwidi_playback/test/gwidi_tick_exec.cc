@@ -13,11 +13,11 @@
 
 void testMidi() {
     auto data = gwidi::midi::GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::midi::MidiParseOptions {
-            gwidi::midi::Instrument::HARP,
-            1
+        "default",
+        1
     });
 
-    auto playback = gwidi::playback::GwidiPlayback(gwidi::midi::nameForInstrument(gwidi::midi::Instrument::HARP));
+    auto playback = gwidi::playback::GwidiPlayback("default");
     playback.assignData(data, gwidi::tick::GwidiTickOptions{
             gwidi::tick::GwidiTickOptions::ActionOctaveBehavior::HIGHEST
     });
@@ -62,7 +62,7 @@ void testGui() {
         index++;
     }
 
-    auto playback = gwidi::playback::GwidiPlayback(gwidi::midi::nameForInstrument(gwidi::midi::Instrument::HARP));
+    auto playback = gwidi::playback::GwidiPlayback("default");
     playback.assignData(data, gwidi::tick::GwidiTickOptions{
             gwidi::tick::GwidiTickOptions::ActionOctaveBehavior::HIGHEST
     });

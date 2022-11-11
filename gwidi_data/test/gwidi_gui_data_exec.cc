@@ -47,8 +47,8 @@ void test_measure(int index, std::vector<gwidi::data::gui::Measure> &measures, g
     }
 }
 
-void test_instrument(gwidi::data::gui::Instrument instr) {
-    auto &options = gwidi::options2::GwidiOptions2::getInstance().getMapping()[gwidi::data::gui::nameForInstrument(instr)];
+void test_instrument(const std::string &instr) {
+    auto &options = gwidi::options2::GwidiOptions2::getInstance().getMapping()[instr];
 
     gwidi::data::gui::GwidiGuiData data(instr);
     auto &measures = data.getMeasures();
@@ -62,9 +62,10 @@ void test_instrument(gwidi::data::gui::Instrument instr) {
 }
 
 int main() {
-    test_instrument(gwidi::data::gui::Instrument::HARP);
-    test_instrument(gwidi::data::gui::Instrument::BELL);
-    test_instrument(gwidi::data::gui::Instrument::FLUTE);
+    test_instrument("default");
+    test_instrument("harp");
+    test_instrument("bell");
+    test_instrument("flute");
 
     return 0;
 }

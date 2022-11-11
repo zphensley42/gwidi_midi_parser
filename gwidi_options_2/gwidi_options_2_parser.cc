@@ -32,7 +32,7 @@ GwidiOptions2 &GwidiOptions2::getInstance() {
 void GwidiOptions2::parseConfigs() {
     {
         std::stringstream ss;
-        ss << CONFIG_DIR << "/instruments.json";
+        ss << CONFIG_DIR << "/instruments/manifest.json";
         std::ifstream instrumentsConfigFile(ss.str());
         json instrumentsJson;
         instrumentsConfigFile >> instrumentsJson;
@@ -40,7 +40,7 @@ void GwidiOptions2::parseConfigs() {
             spdlog::debug("Instrument: {}", instrument);
 
             std::stringstream ss2;
-            ss2 << CONFIG_DIR << "/" << instrument.get<std::string>() << ".json";
+            ss2 << CONFIG_DIR << "/instruments/" << instrument.get<std::string>() << ".json";
             std::string instrFileName = ss2.str();
             std::ifstream instrumentConfigFile(instrFileName);
             json instrumentJson;
@@ -125,6 +125,68 @@ double GwidiOptions2::tempo() {
     return m_tempo;
 }
 
+void GwidiOptions2::addNewConfig(const std::string &configInstrumentName, const Instrument &instrument) {
+    instruments[configInstrumentName] = instrument;
+
+    storeConfigs();
+}
+
+void GwidiOptions2::storeConfigs() {
+    // write each to file
+    for(auto &entry : instruments) {
+        json instrumentJson;
+        instrumentJson["supports_held_notes"] = entry.second.supports_held_notes;
+        instrumentJson["starting_octave"] = entry.second.starting_octave;
+        instrumentJson["octaves"] = json::array();
+        for(auto &entryOctave : entry.second.octaves) {
+            json octaveJson;
+            octaveJson["num"] = entryOctave.num;
+            octaveJson["notes"] = json::array();
+            for(auto &entryNote : entryOctave.notes) {
+                json noteJson;
+                noteJson["midi_octave"] = entryNote.midi_octave;
+                noteJson["key"] = entryNote.key;
+
+                json lettersJson = json::array();
+                for(auto &letter : entryNote.letters) {
+                    lettersJson.emplace_back(letter);
+                }
+                noteJson["letters"] = lettersJson;
+
+                octaveJson["notes"].emplace_back(noteJson);
+            }
+            instrumentJson["octaves"].emplace_back(octaveJson);
+        }
+
+        std::stringstream outName;
+        outName << CONFIG_DIR << "/instruments/" << entry.first << ".json";
+        std::ofstream instrumentJsonFile(outName.str());
+        instrumentJsonFile << instrumentJson.dump(4);
+        instrumentJsonFile.close();
+    }
+
+    // write manifest to file
+    {
+        json instrumentsJson = json::array();
+        for(auto &entry : instruments) {
+            instrumentsJson.emplace_back(entry.first);
+        }
+
+        std::stringstream outName;
+        outName << CONFIG_DIR << "/instruments/manifest.json";
+        std::ofstream instrumentsJsonFile(outName.str());
+        instrumentsJsonFile << instrumentsJson.dump(4);
+        instrumentsJsonFile.close();
+    }
+}
+
+void GwidiOptions2::removeConfig(const std::string &configInstrumentName) {
+    auto instrEntry = instruments.find(configInstrumentName);
+    if(instrEntry != instruments.end()) {
+        instruments.erase(instrEntry, instruments.end());
+    }
+    storeConfigs();
+}
 
 
 std::map<std::string, int> HotkeyOptions::m_keyNameMapping{};

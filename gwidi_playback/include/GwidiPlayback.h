@@ -23,7 +23,7 @@ public:
     using PlayCbFn = std::function<void(gwidi::tick::GwidiAction*)>;
     using PlayEndedCbFn = std::function<void()>;
 
-    GwidiPlayback() : GwidiPlayback(gwidi::data::gui::nameForInstrument(gwidi::data::gui::Instrument::HARP)) {}
+    GwidiPlayback() : GwidiPlayback("default") {}
     explicit GwidiPlayback(const std::string &instrument);
     ~GwidiPlayback();
 

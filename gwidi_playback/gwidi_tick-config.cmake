@@ -1,8 +1,3 @@
-if(NOT TARGET gwidi_options)
-    set(gwidi_options_DIR ${CMAKE_CURRENT_LIST_DIR}/../gwidi_options/)
-    find_package(gwidi_options REQUIRED)
-endif()
-
 if(NOT TARGET gwidi_options_2)
     set(gwidi_options_2_DIR ${CMAKE_CURRENT_LIST_DIR}/../gwidi_options_2/)
     find_package(gwidi_options_2 REQUIRED)

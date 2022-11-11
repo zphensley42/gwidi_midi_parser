@@ -46,6 +46,8 @@ gui::GwidiGuiData* GwidiDataConverter::midiToGui(midi::GwidiMidiData* data) {
     }
     return ret;
 }
+
+// TODO: instead of "default", pull this from some selected configuration value provided by GUI
 midi::GwidiMidiData* GwidiDataConverter::guiToMidi(gui::GwidiGuiData* data) {
     auto ret = new midi::GwidiMidiData();
     ret->assignTempo(data->getTempo(), data->getTempo() / 1000000);
@@ -66,7 +68,7 @@ midi::GwidiMidiData* GwidiDataConverter::guiToMidi(gui::GwidiGuiData* data) {
                                 sixteenthNoteTPQ,
                                 note.octave,
                                 note.letters.at(0),
-                                gwidi::data::gui::nameForInstrument(gwidi::data::gui::Instrument::HARP),
+                                "default",
                                 0,
                                 note.key
                         };
@@ -76,7 +78,7 @@ midi::GwidiMidiData* GwidiDataConverter::guiToMidi(gui::GwidiGuiData* data) {
             }
         }
     }
-    ret->addTrack(gwidi::data::gui::nameForInstrument(gwidi::data::gui::Instrument::HARP), "gwidi_gui", notes, data->trackDuration());
+    ret->addTrack("default", "gwidi_gui", notes, data->trackDuration());
     ret->fillTickMap();
     return ret;
 }

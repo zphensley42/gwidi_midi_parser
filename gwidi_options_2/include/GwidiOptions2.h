@@ -48,9 +48,13 @@ public:
     // Should read this from config, override this when we import a midi or load a file
     double tempo();
 
+    void addNewConfig(const std::string &configInstrumentName, const Instrument &instrument);
+    void removeConfig(const std::string &configInstrumentName);
+
 private:
     GwidiOptions2();
     void parseConfigs();
+    void storeConfigs();
 
     std::map<std::string, Instrument> instruments;
     double m_tempo{0.0};

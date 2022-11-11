@@ -5,17 +5,9 @@
 
 namespace gwidi::midi {
 
-enum Instrument {
-    UNKNOWN = 0,
-    HARP = 1,
-    FLUTE = 2,
-    BELL = 3
-};
-const char* nameForInstrument(Instrument instr);
-Instrument instrumentForName(const char* instr);
 
 struct MidiParseOptions {
-    Instrument instrument{Instrument::UNKNOWN};
+    std::string instrument;
     int chosen_track{0};
 };
 

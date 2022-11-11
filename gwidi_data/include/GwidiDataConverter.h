@@ -13,7 +13,7 @@ public:
     gui::GwidiGuiData* midiToGui(midi::GwidiMidiData* data);
     midi::GwidiMidiData* guiToMidi(gui::GwidiGuiData* data);
 private:
-    GwidiDataConverter() {}
+    GwidiDataConverter() = default;
 };
 
 }

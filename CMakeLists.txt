@@ -21,11 +21,6 @@ if(NOT TARGET gwidi_data)
     find_package(gwidi_data REQUIRED)
 endif()
 
-if(NOT TARGET gwidi_options)
-    set(gwidi_options_DIR ${CMAKE_CURRENT_LIST_DIR}/gwidi_options)
-    find_package(gwidi_options REQUIRED)
-endif()
-
 if(NOT TARGET gwidi_options_2)
     set(gwidi_options_2_DIR ${CMAKE_CURRENT_LIST_DIR}/gwidi_options_2)
     find_package(gwidi_options_2 REQUIRED)
@@ -39,7 +34,6 @@ endif()
 if(BUILD_TESTS)
     message("BUILDING TESTS")
     add_subdirectory(gwidi_data/test)
-    add_subdirectory(gwidi_options/test)
     add_subdirectory(gwidi_options_2/test)
     add_subdirectory(gwidi_midi/test)
     add_subdirectory(gwidi_playback/test)
@@ -55,11 +49,6 @@ set(INSTALL_BIN_DEST "bin/gwidi")
 install(
         TARGETS ${gwidi_options_LIBRARIES} ${gwidi_data_LIBRARIES} ${gwidi_midi_LIBRARIES} ${gwidi_tick_LIBRARIES} ${gwidi_options_2_LIBRARIES} ${gwidi_hotkey_LIBRARIES}
         DESTINATION ${INSTALL_LIB_DEST}
-)
-
-install(
-        FILES ${gwidi_options_INCLUDE_DIRS}/GwidiOptions.h ${gwidi_options_INCLUDE_DIRS}/GwidiOptions_Util.h
-        DESTINATION ${INSTALL_HEADER_DEST}
 )
 
 install(

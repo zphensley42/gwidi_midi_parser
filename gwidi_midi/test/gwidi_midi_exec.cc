@@ -102,8 +102,8 @@ void testConversionMidiToGui() {
 
 void testConversionGuiToMidi() {
     auto data = gwidi::midi::GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::midi::MidiParseOptions{
-            gwidi::midi::Instrument::HARP,
-            1
+        "default",
+        1
     });
     auto guiData = gwidi::data::GwidiDataConverter::getInstance().midiToGui(data);
 
@@ -159,7 +159,7 @@ int main() {
 
 //    auto data = GwidiMidiParser::getInstance().readFile(R"(E:\Tools\repos\gwidi_midi_parser\assets\pollyanna.mid)");
     auto data = gwidi::midi::GwidiMidiParser::getInstance().readFile(TEST_FILE, gwidi::midi::MidiParseOptions{
-        gwidi::midi::Instrument::HARP,
+        "default",
         1
     });
     auto& tracks = data->getTracks();

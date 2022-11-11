@@ -7,15 +7,6 @@
 
 namespace gwidi::data::gui {
 
-enum Instrument {
-    UNKNOWN = 0,
-    HARP = 1,
-    FLUTE = 2,
-    BELL = 3
-};
-const char* nameForInstrument(Instrument instr);
-Instrument instrumentForName(const char* instr);
-
 struct Note {
     std::vector<std::string> letters;
     int measure{0};
@@ -50,8 +41,8 @@ public:
     // value -> list of notes that are activated for that time
     using TickMapType = std::map<double, std::vector<Note>>;
 
-    GwidiGuiData() : GwidiGuiData(Instrument::HARP) {}
-    explicit GwidiGuiData(Instrument instr);
+    GwidiGuiData() : GwidiGuiData("default") {}
+    explicit GwidiGuiData(const std::string& instrument);
 
     void addMeasure(); // Add to gui data
     void toggleNote(Note* note);
@@ -75,7 +66,7 @@ public:
 private:
     friend class GwidiDataConverter;
 
-    Instrument instrument;
+    std::string m_instrument;
 
     double m_tempo{0.0};
     TickMapType m_tickMap;

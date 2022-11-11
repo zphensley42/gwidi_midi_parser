@@ -8,26 +8,6 @@
 
 namespace gwidi::midi {
 
-const char* nameForInstrument(Instrument instr) {
-    static std::map<Instrument, const char*> m {
-            {Instrument::UNKNOWN, "unknown"},
-            {Instrument::HARP, "harp"},
-            {Instrument::FLUTE, "flute"},
-            {Instrument::BELL, "bell"},
-    };
-    return m[instr];
-}
-Instrument instrumentForName(const char* instr) {
-    static std::map<const char*, Instrument> m {
-            {"unknown", Instrument::UNKNOWN},
-            {"harp", Instrument::HARP},
-            {"flute", Instrument::FLUTE},
-            {"bell", Instrument::BELL},
-    };
-    return m[instr];
-}
-
-
 gwidi::data::midi::GwidiMidiData* GwidiMidiParser::readFile(const char* midiName, const MidiParseOptions& options) {
     auto &instrumentOptions = gwidi::options2::GwidiOptions2::getInstance();   // initialize our instrument mapping
 
@@ -101,7 +81,7 @@ gwidi::data::midi::GwidiMidiData* GwidiMidiParser::readFile(const char* midiName
 
                 // When adding a note, determine the 'Note' class variables via our instrumentMapping options
                 // If a note doesn't exist in our mapping, it shouldn't be used
-                auto instrName = nameForInstrument(options.instrument);
+                auto instrName = options.instrument;
                 auto optionsNote = instrumentOptions.optionsNoteFromMidiNote(instrName, event.getKeyOctave(), event.getKeyLetter());
                 // Use the event if we have a valid mapping for it
                 if(!optionsNote.letters.empty()) {
