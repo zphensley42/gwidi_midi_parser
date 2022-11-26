@@ -8,6 +8,8 @@
 #include <memory>
 #include "GwidiOptions2.h"
 
+#include "GwidiServerClient.h"
+
 namespace gwidi::hotkey {
 
 class GwidiHotkeyAssignmentPressDetector {
@@ -34,13 +36,7 @@ public:
     ~GwidiHotkeyAssignmentPressDetector();
 
 private:
-    void findInputDevices();
-
-    std::vector<pollfd> m_inputDevices;
-    static int m_timeoutMs;
-
     std::atomic_bool m_thAlive{false};
-    std::shared_ptr<std::thread> m_th;
 
     std::vector<int> m_tempPressedKeys;
     std::function<void()> m_pressedKeyCb;

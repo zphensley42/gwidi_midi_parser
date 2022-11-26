@@ -9,6 +9,8 @@
 #include <filesystem>
 #include <utility>
 
+#include "GwidiServerClient.h"
+
 #define EVT_DEVICE "/dev/input/event7"
 
 namespace gwidi::hotkey {
@@ -19,45 +21,21 @@ bool supports_key_events(const int &fd) {
     return (evbit & (1 << EV_KEY));
 }
 
-int GwidiHotkeyAssignmentPressDetector::m_timeoutMs{5000};
-
 GwidiHotkeyAssignmentPressDetector::~GwidiHotkeyAssignmentPressDetector() {
-    if(m_thAlive.load() && m_th->joinable()) {
-        m_thAlive.store(false);
-        m_th->join();
-    }
-    else {
-        m_thAlive.store(false);
+    if(m_thAlive.load()) {
+        stopListening();
     }
 }
 
-void GwidiHotkeyAssignmentPressDetector::findInputDevices() {
-    // Requires root
-    auto uid = getuid();
-    if(uid != 0) {
-        spdlog::warn("User is not root, cross-process hotkeys may not function!");
-    }
-
-    char eventPathStart[] = "/dev/input/event";
-    m_inputDevices.clear();
-    for (auto &i : std::filesystem::directory_iterator("/dev/input")) {
-        if(i.is_character_file()) {
-            std::string view(i.path());
-            if (view.compare(0, sizeof(eventPathStart)-1, eventPathStart) == 0) {
-                int evfile = open(view.c_str(), O_RDONLY | O_NONBLOCK);
-                if(supports_key_events(evfile)) {
-                    spdlog::debug("Adding {}", i.path().c_str());
-                    m_inputDevices.push_back({evfile, POLLIN, 0});
-                } else {
-                    close(evfile);
-                }
-            }
-        }
-    }
-}
-
+// No need for threading anymore? Do all the work on the callback thread for the socket?
+// Be sure to clear the callback when we die -- do we need a single callback or multiple to support possible multiple listeners to the event thread?
+// TODO: We probably need multiple to, if nothing else, handle focus events separately
 void GwidiHotkeyAssignmentPressDetector::stopListening() {
     m_thAlive.store(false);
+
+    // TODO: Just remove our listener, don't override the full cb
+    auto listener = gwidi::udpsocket::GwidiServerClientManager::instance().serverListener();
+    listener->setEventCb(nullptr);
 }
 
 void GwidiHotkeyAssignmentPressDetector::beginListening() {
@@ -67,61 +45,37 @@ void GwidiHotkeyAssignmentPressDetector::beginListening() {
 
     m_thAlive.store(true);
 
-    m_th = std::make_shared<std::thread>([this] {
-        findInputDevices();
+    // TODO: Assign a callback for ourselves, not an override of the existing callback (see notes above)
+    auto listener = gwidi::udpsocket::GwidiServerClientManager::instance().serverListener();
 
-        // Requires root
-        auto uid = getuid();
-        if(uid != 0) {
-            spdlog::warn("User is not root, cross-process hotkeys may not function!");
-        }
+    std::vector<int> pressedKeys;
+    listener->setEventCb([this, &pressedKeys](udpsocket::ServerEventType type, udpsocket::ServerEvent event) {
+        if(type == udpsocket::ServerEventType::EVENT_KEY) {
+            auto keyType = event.keyEvent.eventType;    // pressed/released
+            auto keyCode = event.keyEvent.code;
 
-        // Get our config to use when looking for inputs to see if a hotkey was detected
-        auto &options = gwidi::options2::HotkeyOptions::getInstance();
-        auto &mapping = options.getHotkeyMapping();
+            if(keyCode < 0x100) {
+                if(keyType == 0) {
+                    spdlog::debug("Key released: {}", keyCode);
+                    pressedKeys.erase(std::remove(pressedKeys.begin(), pressedKeys.end(), keyCode), pressedKeys.end());
+                }
+                else if(keyType == 1) {
+                    spdlog::debug("Key pressed: {}", keyCode);
+                    pressedKeys.emplace_back(keyCode);
 
-        std::vector<int> pressedKeys;
-
-        input_event ev{};
-        while(m_thAlive.load()) {
-            poll(m_inputDevices.data(), m_inputDevices.size(), m_timeoutMs);
-            for (auto &pfd : m_inputDevices) {
-                if (pfd.revents & POLLIN) {
-                    if(read(pfd.fd, &ev, sizeof(ev)) == sizeof(ev)) {
-                        // value: or 0 for EV_KEY for release, 1 for keypress and 2 for autorepeat
-                        if(ev.type == EV_KEY && ev.code < 0x100) {
-                            if(ev.value == 0) {
-                                spdlog::debug("Key released: {}", ev.code);
-                                pressedKeys.erase(std::remove(pressedKeys.begin(), pressedKeys.end(), ev.code), pressedKeys.end());
-                            }
-                            else if(ev.value == 1) {
-                                spdlog::debug("Key pressed: {}", ev.code);
-                                pressedKeys.emplace_back(ev.code);
-
-                                if(m_tempPressedKeys.size() < 5) {  // some number based on the max individual keys to press to activate a hotkey
-                                    // Disallow duplicates
-                                    if(std::find(m_tempPressedKeys.begin(), m_tempPressedKeys.end(), ev.code) == m_tempPressedKeys.end()) {
-                                        m_tempPressedKeys.emplace_back(ev.code);
-                                        if(m_pressedKeyCb) {
-                                            m_pressedKeyCb();
-                                        }
-                                    }
-                                }
-                            }
-                            else if(ev.value == 2) {
-                                // spdlog::info("Key autorepeat: {}", ev.code);
+                    if(m_tempPressedKeys.size() < 5) {  // some number based on the max individual keys to press to activate a hotkey
+                        // Disallow duplicates
+                        if(std::find(m_tempPressedKeys.begin(), m_tempPressedKeys.end(), keyCode) == m_tempPressedKeys.end()) {
+                            m_tempPressedKeys.emplace_back(keyCode);
+                            if(m_pressedKeyCb) {
+                                m_pressedKeyCb();
                             }
                         }
                     }
                 }
             }
         }
-
-        for(auto &pfd : m_inputDevices) {
-            close(pfd.fd);
-        }
     });
-    m_th->detach();
 }
 
 
@@ -146,6 +100,7 @@ std::vector<GwidiHotkeyAssignmentPressDetector::DetectedKey> GwidiHotkeyAssignme
 
 
 
+// TODO: See above for example of how to update this for the new server system
 int GwidiHotkey::m_timeoutMs{5000};
 
 GwidiHotkey::~GwidiHotkey() {

@@ -31,6 +31,11 @@ if(NOT TARGET gwidi_hotkey)
     find_package(gwidi_hotkey REQUIRED)
 endif()
 
+if(NOT TARGET gwidi_server_client)
+    set(gwidi_server_client_DIR ${CMAKE_CURRENT_LIST_DIR}/gwidi_server_client)
+    find_package(gwidi_server_client REQUIRED)
+endif()
+
 if(BUILD_TESTS)
     message("BUILDING TESTS")
     add_subdirectory(gwidi_data/test)
@@ -39,6 +44,7 @@ if(BUILD_TESTS)
     add_subdirectory(gwidi_playback/test)
     add_subdirectory(gwidi_hotkey/test)
     add_subdirectory(strutil/test)
+    add_subdirectory(gwidi_server_client/test)
 endif()
 
 
