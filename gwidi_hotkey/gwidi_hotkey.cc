@@ -15,12 +15,6 @@
 
 namespace gwidi::hotkey {
 
-bool supports_key_events(const int &fd) {
-    unsigned long evbit = 0;
-    ioctl(fd, EVIOCGBIT(0, sizeof(evbit)), &evbit);
-    return (evbit & (1 << EV_KEY));
-}
-
 GwidiHotkeyAssignmentPressDetector::~GwidiHotkeyAssignmentPressDetector() {
     if(m_thAlive.load()) {
         stopListening();

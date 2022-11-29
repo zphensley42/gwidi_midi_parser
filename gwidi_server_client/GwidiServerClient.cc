@@ -46,7 +46,7 @@ void GwidiServerClient::sendHello() {
     spdlog::info("Sent {} bytes of data", bytesSent);
 }
 
-void GwidiServerClient::sendWatchedKeysReconfig(std::vector<int> watchedKeys) {
+void GwidiServerClient::sendWatchedKeysReconfig(const std::vector<int>& watchedKeys) {
     auto toIp = ipForSin(m_toAddr);
 
     char* buffer = new char[1024];
@@ -93,8 +93,9 @@ std::shared_ptr<GwidiServerListener> GwidiServerClientManager::serverListener() 
     return m_serverListener;
 }
 
-GwidiServerListener::GwidiServerListener() {
-}
+GwidiServerListener::GwidiServerListener() = default;
+
+std::vector<int> GwidiServerListener::s_helloTimeoutS{1, 5, 10, 20};
 
 void GwidiServerListener::start() {
     if(m_thAlive.load()) {
@@ -103,7 +104,7 @@ void GwidiServerListener::start() {
 
     m_thAlive.store(true);
 
-    struct sockaddr_in socketIn_serverClient;
+    struct sockaddr_in socketIn_serverClient{};
     memset(&socketIn_serverClient, '\0', sizeof(socketIn_serverClient));
     socketIn_serverClient.sin_family = AF_INET;
     socketIn_serverClient.sin_port = htons(5577);
@@ -114,7 +115,7 @@ void GwidiServerListener::start() {
         // For now, port is here
         int port = 5578;
         int sockfd;
-        struct sockaddr_in socketIn_server, socketIn_client;
+        struct sockaddr_in socketIn_server{}, socketIn_client{};
         char buffer[1024];  // probably too big for our needs
         socklen_t addr_size;
 
@@ -135,12 +136,36 @@ void GwidiServerListener::start() {
         addr_size = sizeof(socketIn_client);
         while(m_thAlive.load()) {
             memset(buffer, '\0', sizeof(buffer));
-            recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr*)&socketIn_client, &addr_size);  // Should loop this to continue receiving messages
-            spdlog::info("Received message from client: {}, message: {}", ipForSin(socketIn_client), buffer);
-            // TODO: Probably do some type of shared secret thing where we only accept clients we trust
-            // TODO: For now, just look for a header message first to determine this is our client (assign only a single client at a time)
 
-            processEvent(buffer);
+            auto toWaitIndex = std::min(s_helloTimeoutS.size() - 1, m_helloRetryCount);
+            auto toWait = s_helloTimeoutS[toWaitIndex];
+            struct timeval tv{};
+            tv.tv_sec = toWait;
+            tv.tv_usec = 0;
+            setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+
+            auto read = recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr*)&socketIn_client, &addr_size);  // Should loop this to continue receiving messages
+            if(read == -1) {
+                // Error
+                if(m_socketClient) {
+                    if(!m_socketClient->isReceived()) {
+                        m_helloRetryCount++;
+                        spdlog::error("Socket recvfrom error: {}", strerror(errno));
+
+                        // Try again
+                        m_socketClient->sendHello();
+                    }
+                }
+            }
+            else {
+                m_helloRetryCount = 0;
+
+                spdlog::info("Received message from client: {}, message: {}", ipForSin(socketIn_client), buffer);
+                // TODO: Probably do some type of shared secret thing where we only accept clients we trust
+                // TODO: For now, just look for a header message first to determine this is our client (assign only a single client at a time)
+
+                processEvent(buffer);
+            }
         }
         if(m_socketClient != nullptr) {
             delete m_socketClient;
@@ -152,6 +177,7 @@ void GwidiServerListener::start() {
     m_th->detach();
 
     // After we create the server and bind/recv on the port, message the server to tell it hello (we then wait for helloback)
+    // If we don't receive a helloback within a set period, retry the hello
     m_socketClient->sendHello();
 
 }
@@ -160,10 +186,10 @@ void GwidiServerListener::stop() {
     m_thAlive.store(false);
 }
 
-void GwidiServerListener::sendWatchedKeysReconfig(std::vector<int> watchedKeys) {
+void GwidiServerListener::sendWatchedKeysReconfig(const std::vector<int>& watchedKeys) {
     if(m_socketClient) {
         if(m_socketClient->isReceived()) {
-            m_socketClient->sendWatchedKeysReconfig(std::move(watchedKeys));
+            m_socketClient->sendWatchedKeysReconfig(watchedKeys);
         }
         else {
             m_socketClient->queueWatchedKeysReconfig(watchedKeys);
@@ -224,13 +250,7 @@ void GwidiServerListener::processEvent(char *buffer) {
                 memcpy(&type, buffer + bufferOffset, sizeof(int));
                 bufferOffset += sizeof(int);
 
-                auto ev = ServerEvent{.keyEvent{code, type}};
-                {
-                    std::lock_guard<std::mutex> lock(m_eventCbsMutex);
-                    for(auto &eventCb : m_eventCbs) {
-                        eventCb.second(ServerEventType::EVENT_KEY, ev);
-                    }
-                }
+                iterateEvents(ServerEventType::EVENT_KEY, ServerEvent{.keyEvent{code, type}});
             }
             break;
         }
@@ -251,13 +271,7 @@ void GwidiServerListener::processEvent(char *buffer) {
                 memcpy(&hasFocus, buffer + bufferOffset, sizeof(bool));
                 bufferOffset += sizeof(bool);
 
-                auto ev = ServerEvent{.focusEvent{windowNameSize, windowName, hasFocus}};
-                {
-                    std::lock_guard<std::mutex> lock(m_eventCbsMutex);
-                    for(auto &eventCb : m_eventCbs) {
-                        eventCb.second(ServerEventType::EVENT_FOCUS, ev);
-                    }
-                }
+                iterateEvents(ServerEventType::EVENT_FOCUS, ServerEvent{.focusEvent{windowNameSize, windowName, hasFocus}});
             }
             break;
         }
@@ -266,6 +280,61 @@ void GwidiServerListener::processEvent(char *buffer) {
             break;
         }
     }
+}
+
+void GwidiServerListener::addEventCb(const std::string &identifier, const GwidiServerListener::EventCb &cb) {
+
+    auto action = [identifier, cb, this](){
+        auto it = m_eventCbs.find(identifier);
+        if(it == m_eventCbs.end()) {
+            m_eventCbs[identifier] = cb;
+        }
+        else {
+            // Lock in case we are modifying an existing callback reference
+            m_eventCbsLock.lock();
+            m_eventCbs[identifier] = cb;
+            m_eventCbsLock.unlock();
+        }
+    };
+
+    if(m_eventCbsLock.owns_lock()) {
+        m_deferredActions.emplace_back(action);
+    }
+    else {
+        action();
+    }
+}
+
+void GwidiServerListener::removeEventCb(const std::string &identifier) {
+    auto action = [this, identifier](){
+        auto it = m_eventCbs.find(identifier);
+        if(it != m_eventCbs.end()) {
+            m_eventCbsLock.lock();
+            m_eventCbs.erase(it);
+            m_eventCbsLock.unlock();
+        }
+    };
+
+    if(m_eventCbsLock.owns_lock()) {
+        m_deferredActions.emplace_back(action);
+    }
+    else {
+        action();
+    }
+}
+
+void GwidiServerListener::iterateEvents(ServerEventType type, ServerEvent event) {
+    // First, deal with any pending actions
+    for(auto &act : m_deferredActions) {
+        act();
+    }
+    m_deferredActions.clear();
+
+    m_eventCbsLock.lock();
+    for(auto &cb : m_eventCbs) {
+        cb.second(type, event);
+    }
+    m_eventCbsLock.unlock();
 }
 
 }
