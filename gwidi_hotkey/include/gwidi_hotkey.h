@@ -55,7 +55,6 @@ public:
 
     ~GwidiHotkey();
 private:
-    void findInputDevices();
     void hotkeyDetected(gwidi::options2::HotkeyOptions::HotKey& hotKey);
 
     std::vector<pollfd> m_inputDevices;

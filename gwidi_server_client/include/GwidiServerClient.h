@@ -7,6 +7,11 @@
 #include <netinet/in.h>
 #include <functional>
 #include <utility>
+#include <list>
+#include <map>
+#include <string>
+#include <queue>
+#include <mutex>
 
 // TODO: Make connection to server more resilient (i.e. don't need server started first for this to work, poll until we connect?)
 
@@ -40,20 +45,25 @@ union ServerEvent {
 // Send things to the server
 class GwidiServerClient {
 public:
+    using WatchedKeysConfig = std::vector<int>;
+
     GwidiServerClient() = delete;
     explicit GwidiServerClient(const sockaddr_in& toAddr);
 
     void sendHello();
     void sendWatchedKeysReconfig(std::vector<int> watchedKeys);
 
-    inline void markReceived() {
-        m_receivedHello = true;
-    }
+    inline void markReceived();
     inline bool isReceived() {
         return m_receivedHello;
     }
+    inline void queueWatchedKeysReconfig(std::vector<int> watchedKeys) {
+        m_watchedKeysReconfigQueue.emplace(watchedKeys);
+    }
 
 private:
+    std::queue<WatchedKeysConfig> m_watchedKeysReconfigQueue;
+
     bool m_receivedHello{false};
     int sockfd;
     struct sockaddr_in m_toAddr;
@@ -78,12 +88,22 @@ public:
         return m_thAlive.load();
     }
 
-    inline void setEventCb(EventCb cb) {
-        m_eventCb = std::move(cb);
+    inline void addEventCb(const std::string &identifier, const EventCb& cb) {
+        std::lock_guard<std::mutex> lock(m_eventCbsMutex);
+        m_eventCbs[identifier] = cb;
+    }
+
+    inline void removeEventCb(const std::string &identifier) {
+        auto it = m_eventCbs.find(identifier);
+        if(it != m_eventCbs.end()) {
+            std::lock_guard<std::mutex> lock(m_eventCbsMutex);
+            m_eventCbs.erase(it);
+        }
     }
 
 private:
-    EventCb m_eventCb;
+    std::mutex m_eventCbsMutex;
+    std::map<std::string, EventCb> m_eventCbs;
 
     std::atomic_bool m_thAlive{false};
     std::shared_ptr<std::thread> m_th;

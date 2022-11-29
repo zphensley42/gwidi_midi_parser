@@ -7,7 +7,7 @@ int main() {
     listener.start();
 
     bool doSendWatchedKeysTest = true;
-    listener.setEventCb([&](gwidi::udpsocket::ServerEventType type, gwidi::udpsocket::ServerEvent event) {
+    listener.addEventCb("ServerClientTest", [&](gwidi::udpsocket::ServerEventType type, gwidi::udpsocket::ServerEvent event) {
         spdlog::info("Event received, type: {}", type);
         if(type == gwidi::udpsocket::ServerEventType::EVENT_KEY) {
             spdlog::info("Key Event: {}, {}", event.keyEvent.code, event.keyEvent.eventType);

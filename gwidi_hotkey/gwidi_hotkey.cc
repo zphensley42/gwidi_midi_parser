@@ -33,9 +33,8 @@ GwidiHotkeyAssignmentPressDetector::~GwidiHotkeyAssignmentPressDetector() {
 void GwidiHotkeyAssignmentPressDetector::stopListening() {
     m_thAlive.store(false);
 
-    // TODO: Just remove our listener, don't override the full cb
     auto listener = gwidi::udpsocket::GwidiServerClientManager::instance().serverListener();
-    listener->setEventCb(nullptr);
+    listener->removeEventCb("PressDetector");
 }
 
 void GwidiHotkeyAssignmentPressDetector::beginListening() {
@@ -45,11 +44,10 @@ void GwidiHotkeyAssignmentPressDetector::beginListening() {
 
     m_thAlive.store(true);
 
-    // TODO: Assign a callback for ourselves, not an override of the existing callback (see notes above)
     auto listener = gwidi::udpsocket::GwidiServerClientManager::instance().serverListener();
 
     std::vector<int> pressedKeys;
-    listener->setEventCb([this, &pressedKeys](udpsocket::ServerEventType type, udpsocket::ServerEvent event) {
+    listener->addEventCb("PressDetector", [this, &pressedKeys](udpsocket::ServerEventType type, udpsocket::ServerEvent event) {
         if(type == udpsocket::ServerEventType::EVENT_KEY) {
             auto keyType = event.keyEvent.eventType;    // pressed/released
             auto keyCode = event.keyEvent.code;
@@ -100,46 +98,19 @@ std::vector<GwidiHotkeyAssignmentPressDetector::DetectedKey> GwidiHotkeyAssignme
 
 
 
-// TODO: See above for example of how to update this for the new server system
 int GwidiHotkey::m_timeoutMs{5000};
 
 GwidiHotkey::~GwidiHotkey() {
-    if(m_thAlive.load() && m_th->joinable()) {
-        m_thAlive.store(false);
-        m_th->join();
-    }
-    else {
-        m_thAlive.store(false);
-    }
-}
-
-void GwidiHotkey::findInputDevices() {
-    // Requires root
-    auto uid = getuid();
-    if(uid != 0) {
-        spdlog::warn("User is not root, cross-process hotkeys may not function!");
-    }
-
-    char eventPathStart[] = "/dev/input/event";
-    m_inputDevices.clear();
-    for (auto &i : std::filesystem::directory_iterator("/dev/input")) {
-        if(i.is_character_file()) {
-            std::string view(i.path());
-            if (view.compare(0, sizeof(eventPathStart)-1, eventPathStart) == 0) {
-                int evfile = open(view.c_str(), O_RDONLY | O_NONBLOCK);
-                if(supports_key_events(evfile)) {
-                    spdlog::debug("Adding {}", i.path().c_str());
-                    m_inputDevices.push_back({evfile, POLLIN, 0});
-                } else {
-                    close(evfile);
-                }
-            }
-        }
+    if(m_thAlive.load()) {
+        stopListening();
     }
 }
 
 void GwidiHotkey::stopListening() {
     m_thAlive.store(false);
+
+    auto listener = gwidi::udpsocket::GwidiServerClientManager::instance().serverListener();
+    listener->removeEventCb("HotkeyDetector");
 }
 
 void GwidiHotkey::beginListening() {
@@ -149,49 +120,28 @@ void GwidiHotkey::beginListening() {
 
     m_thAlive.store(true);
 
-    m_th = std::make_shared<std::thread>([this] {
-        findInputDevices();
+    // Get our config to use when looking for inputs to see if a hotkey was detected
+    auto &options = gwidi::options2::HotkeyOptions::getInstance();
+    auto &mapping = options.getHotkeyMapping();
 
-        // Requires root
-        auto uid = getuid();
-        if(uid != 0) {
-            spdlog::warn("User is not root, cross-process hotkeys may not function!");
-        }
+    auto listener = gwidi::udpsocket::GwidiServerClientManager::instance().serverListener();
 
-        // Get our config to use when looking for inputs to see if a hotkey was detected
-        auto &options = gwidi::options2::HotkeyOptions::getInstance();
-        auto &mapping = options.getHotkeyMapping();
-
-        std::vector<int> pressedKeys;
-        bool doDetect = true;
-
-        input_event ev{};
-        while(m_thAlive.load()) {
-            poll(m_inputDevices.data(), m_inputDevices.size(), m_timeoutMs);
-            for (auto &pfd : m_inputDevices) {
-                if (pfd.revents & POLLIN) {
-                    if(read(pfd.fd, &ev, sizeof(ev)) == sizeof(ev)) {
-                        // value: or 0 for EV_KEY for release, 1 for keypress and 2 for autorepeat
-                        if(ev.type == EV_KEY && ev.code < 0x100) {
-                            if(ev.value == 0) {
-                                spdlog::info("Key released: {}", ev.code);
-                                pressedKeys.erase(std::remove(pressedKeys.begin(), pressedKeys.end(), ev.code), pressedKeys.end());
-                            }
-                            else if(ev.value == 1) {
-                                spdlog::info("Key pressed: {}", ev.code);
-                                pressedKeys.emplace_back(ev.code);
-                                doDetect = true;
-                            }
-                            else if(ev.value == 2) {
-                                spdlog::debug("Key autorepeat: {}", ev.code);
-                            }
-                        }
-                    }
+    std::vector<int> pressedKeys;
+    bool doDetect = true;
+    listener->addEventCb("HotkeyDetector", [this, &pressedKeys, &doDetect, &mapping](udpsocket::ServerEventType type, udpsocket::ServerEvent event) {
+        if (type == udpsocket::ServerEventType::EVENT_KEY) {
+            if(event.keyEvent.code < 0x100) {
+                if(event.keyEvent.eventType == 0) {
+                    spdlog::info("Key released: {}", event.keyEvent.code);
+                    pressedKeys.erase(std::remove(pressedKeys.begin(), pressedKeys.end(), event.keyEvent.code), pressedKeys.end());
+                }
+                else if(event.keyEvent.eventType == 1) {
+                    spdlog::info("Key pressed: {}", event.keyEvent.code);
+                    pressedKeys.emplace_back(event.keyEvent.code);
+                    doDetect = true;
                 }
             }
 
-            // Check for hotkeys matching the combination
-            // Only trigger when the vector changes
             if(doDetect) {
                 auto hash = gwidi::options2::HotkeyOptions::hashFromKeys(pressedKeys);
                 auto it = mapping.find(hash);
@@ -201,12 +151,7 @@ void GwidiHotkey::beginListening() {
                 doDetect = false;
             }
         }
-
-        for(auto &pfd : m_inputDevices) {
-            close(pfd.fd);
-        }
     });
-    m_th->detach();
 }
 
 void GwidiHotkey::hotkeyDetected(options2::HotkeyOptions::HotKey &hotKey) {

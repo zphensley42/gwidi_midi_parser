@@ -71,6 +71,15 @@ void GwidiServerClient::sendWatchedKeysReconfig(std::vector<int> watchedKeys) {
     spdlog::info("Sent {} bytes of data", bytesSent);
 }
 
+void GwidiServerClient::markReceived() {
+    m_receivedHello = true;
+    while(!m_watchedKeysReconfigQueue.empty()) {
+        auto &cfg = m_watchedKeysReconfigQueue.front();
+        sendWatchedKeysReconfig(cfg);
+        m_watchedKeysReconfigQueue.pop();
+    }
+}
+
 GwidiServerClientManager &GwidiServerClientManager::instance() {
     static GwidiServerClientManager instance;
     return instance;
@@ -152,8 +161,13 @@ void GwidiServerListener::stop() {
 }
 
 void GwidiServerListener::sendWatchedKeysReconfig(std::vector<int> watchedKeys) {
-    if(m_socketClient && m_socketClient->isReceived()) {
-        m_socketClient->sendWatchedKeysReconfig(std::move(watchedKeys));
+    if(m_socketClient) {
+        if(m_socketClient->isReceived()) {
+            m_socketClient->sendWatchedKeysReconfig(std::move(watchedKeys));
+        }
+        else {
+            m_socketClient->queueWatchedKeysReconfig(watchedKeys);
+        }
     }
 }
 
@@ -210,8 +224,12 @@ void GwidiServerListener::processEvent(char *buffer) {
                 memcpy(&type, buffer + bufferOffset, sizeof(int));
                 bufferOffset += sizeof(int);
 
-                if(m_eventCb) {
-                    m_eventCb(ServerEventType::EVENT_KEY, ServerEvent{.keyEvent{code, type}});
+                auto ev = ServerEvent{.keyEvent{code, type}};
+                {
+                    std::lock_guard<std::mutex> lock(m_eventCbsMutex);
+                    for(auto &eventCb : m_eventCbs) {
+                        eventCb.second(ServerEventType::EVENT_KEY, ev);
+                    }
                 }
             }
             break;
@@ -233,8 +251,12 @@ void GwidiServerListener::processEvent(char *buffer) {
                 memcpy(&hasFocus, buffer + bufferOffset, sizeof(bool));
                 bufferOffset += sizeof(bool);
 
-                if(m_eventCb) {
-                    m_eventCb(ServerEventType::EVENT_KEY, ServerEvent{.focusEvent{windowNameSize, windowName, hasFocus}});
+                auto ev = ServerEvent{.focusEvent{windowNameSize, windowName, hasFocus}};
+                {
+                    std::lock_guard<std::mutex> lock(m_eventCbsMutex);
+                    for(auto &eventCb : m_eventCbs) {
+                        eventCb.second(ServerEventType::EVENT_FOCUS, ev);
+                    }
                 }
             }
             break;
