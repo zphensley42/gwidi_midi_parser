@@ -148,7 +148,8 @@ void GwidiServerListener::start() {
             if(read == -1) {
                 // Error
                 if(m_socketClient) {
-                    if(!m_socketClient->isReceived()) {
+                    if(!m_socketClient->isReceived()) { // TODO: Need to handle when the server restarts and we have marked as received, we will need to send hello again
+                        // TODO: Possibly handle the above with a recurrent 'ping' to the server for connection status?
                         m_helloRetryCount++;
                         spdlog::error("Socket recvfrom error: {}", strerror(errno));
 

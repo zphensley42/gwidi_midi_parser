@@ -2,6 +2,7 @@
 #define GWIDI_MIDI_PARSER_GWIDI_HOTKEY_H
 
 #include <sys/poll.h>
+#include <utility>
 #include <vector>
 #include <thread>
 #include <atomic>
@@ -29,7 +30,7 @@ public:
     // These 2 methods can be used in combination to initiate listening / listing keys that are pressed from the moment we ask to the moment we retrieve the list
     void clearPressedKeys();
     inline void assignPressedKeyListener(std::function<void()> cb) {
-        m_pressedKeyCb = cb;
+        m_pressedKeyCb = std::move(cb);
     }
     std::vector<DetectedKey> pressedKeys();
 
@@ -38,6 +39,7 @@ public:
 private:
     std::atomic_bool m_thAlive{false};
 
+    std::vector<int> m_pressedKeys;
     std::vector<int> m_tempPressedKeys;
     std::function<void()> m_pressedKeyCb;
 };
@@ -60,6 +62,7 @@ private:
     std::vector<pollfd> m_inputDevices;
     static int m_timeoutMs;
 
+    std::vector<int> m_pressedKeys;
     std::atomic_bool m_thAlive{false};
     std::shared_ptr<std::thread> m_th;
 

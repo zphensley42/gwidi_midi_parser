@@ -53,7 +53,7 @@ set(INSTALL_HEADER_DEST "include/gwidi")
 set(INSTALL_BIN_DEST "bin/gwidi")
 
 install(
-        TARGETS ${gwidi_options_LIBRARIES} ${gwidi_data_LIBRARIES} ${gwidi_midi_LIBRARIES} ${gwidi_tick_LIBRARIES} ${gwidi_options_2_LIBRARIES} ${gwidi_hotkey_LIBRARIES}
+        TARGETS ${gwidi_options_LIBRARIES} ${gwidi_data_LIBRARIES} ${gwidi_midi_LIBRARIES} ${gwidi_tick_LIBRARIES} ${gwidi_options_2_LIBRARIES} ${gwidi_hotkey_LIBRARIES} ${gwidi_server_client_LIBRARIES}
         DESTINATION ${INSTALL_LIB_DEST}
 )
 
@@ -84,5 +84,10 @@ install(
 
 install(
         FILES ${gwidi_hotkey_INCLUDE_DIRS}/gwidi_hotkey.h
+        DESTINATION ${INSTALL_HEADER_DEST}
+)
+
+install(
+        FILES ${gwidi_server_client_INCLUDE_DIRS}/GwidiServerClient.h
         DESTINATION ${INSTALL_HEADER_DEST}
 )

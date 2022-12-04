@@ -40,8 +40,8 @@ void GwidiHotkeyAssignmentPressDetector::beginListening() {
 
     auto listener = gwidi::udpsocket::GwidiServerClientManager::instance().serverListener();
 
-    std::vector<int> pressedKeys;
-    listener->addEventCb("PressDetector", [this, &pressedKeys](udpsocket::ServerEventType type, udpsocket::ServerEvent event) {
+    m_pressedKeys.clear();
+    listener->addEventCb("PressDetector", [this](udpsocket::ServerEventType type, udpsocket::ServerEvent event) {
         if(type == udpsocket::ServerEventType::EVENT_KEY) {
             auto keyType = event.keyEvent.eventType;    // pressed/released
             auto keyCode = event.keyEvent.code;
@@ -49,11 +49,11 @@ void GwidiHotkeyAssignmentPressDetector::beginListening() {
             if(keyCode < 0x100) {
                 if(keyType == 0) {
                     spdlog::debug("Key released: {}", keyCode);
-                    pressedKeys.erase(std::remove(pressedKeys.begin(), pressedKeys.end(), keyCode), pressedKeys.end());
+                    m_pressedKeys.erase(std::remove(m_pressedKeys.begin(), m_pressedKeys.end(), keyCode), m_pressedKeys.end());
                 }
                 else if(keyType == 1) {
                     spdlog::debug("Key pressed: {}", keyCode);
-                    pressedKeys.emplace_back(keyCode);
+                    m_pressedKeys.emplace_back(keyCode);
 
                     if(m_tempPressedKeys.size() < 5) {  // some number based on the max individual keys to press to activate a hotkey
                         // Disallow duplicates
@@ -120,24 +120,24 @@ void GwidiHotkey::beginListening() {
 
     auto listener = gwidi::udpsocket::GwidiServerClientManager::instance().serverListener();
 
-    std::vector<int> pressedKeys;
     bool doDetect = true;
-    listener->addEventCb("HotkeyDetector", [this, &pressedKeys, &doDetect, &mapping](udpsocket::ServerEventType type, udpsocket::ServerEvent event) {
+    m_pressedKeys.clear();
+    listener->addEventCb("HotkeyDetector", [this, &doDetect, &mapping](udpsocket::ServerEventType type, udpsocket::ServerEvent event) {
         if (type == udpsocket::ServerEventType::EVENT_KEY) {
             if(event.keyEvent.code < 0x100) {
                 if(event.keyEvent.eventType == 0) {
                     spdlog::info("Key released: {}", event.keyEvent.code);
-                    pressedKeys.erase(std::remove(pressedKeys.begin(), pressedKeys.end(), event.keyEvent.code), pressedKeys.end());
+                    m_pressedKeys.erase(std::remove(m_pressedKeys.begin(), m_pressedKeys.end(), event.keyEvent.code), m_pressedKeys.end());
                 }
                 else if(event.keyEvent.eventType == 1) {
                     spdlog::info("Key pressed: {}", event.keyEvent.code);
-                    pressedKeys.emplace_back(event.keyEvent.code);
+                    m_pressedKeys.emplace_back(event.keyEvent.code);
                     doDetect = true;
                 }
             }
 
             if(doDetect) {
-                auto hash = gwidi::options2::HotkeyOptions::hashFromKeys(pressedKeys);
+                auto hash = gwidi::options2::HotkeyOptions::hashFromKeys(m_pressedKeys);
                 auto it = mapping.find(hash);
                 if(it != mapping.end()) {
                     hotkeyDetected(it->second);
