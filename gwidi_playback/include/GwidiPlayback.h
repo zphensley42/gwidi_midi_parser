@@ -4,7 +4,7 @@
 #if defined(WIN32) || defined(WIN64)
 #include "WindowsSendInput.h"
 #elif defined(__linux__)
-#include "LinuxSendInput.h"
+#include "UdpSendInput.h"
 #endif
 
 #include <thread>

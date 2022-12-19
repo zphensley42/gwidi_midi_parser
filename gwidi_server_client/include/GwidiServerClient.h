@@ -23,7 +23,8 @@ enum ServerEventType {
     EVENT_HELLO = 0,
     EVENT_KEY = 1,
     EVENT_FOCUS = 2,
-    EVENT_WATCHEDKEYS_RECONFIGURE = 3
+    EVENT_WATCHEDKEYS_RECONFIGURE = 3,
+    EVENT_SENDINPUT = 4
 };
 
 struct KeyEvent {
@@ -53,6 +54,7 @@ public:
 
     void sendHello();
     void sendWatchedKeysReconfig(const std::vector<int>& watchedKeys);
+    void sendKeyInputEvent(const std::string &key);
 
     inline void markReceived();
     inline bool isReceived() const {
@@ -82,6 +84,7 @@ public:
     void stop();
 
     void sendWatchedKeysReconfig(const std::vector<int>& watchedKeys);
+    void sendKeyInputEvent(const std::string& key);
 
     void processEvent(char* buffer);
 
@@ -94,6 +97,10 @@ public:
     void removeEventCb(const std::string &identifier);
 
     void iterateEvents(ServerEventType type, ServerEvent event);
+
+    inline GwidiServerClient* getServerClient() {
+        return m_socketClient;
+    }
 
 private:
     std::list<std::function<void()>> m_deferredActions;

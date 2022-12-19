@@ -42,6 +42,7 @@ if(BUILD_TESTS)
     add_subdirectory(gwidi_options_2/test)
     add_subdirectory(gwidi_midi/test)
     add_subdirectory(gwidi_playback/test)
+    add_subdirectory(gwidi_playback/udp_sendinput/test)
     add_subdirectory(gwidi_hotkey/test)
     add_subdirectory(strutil/test)
     add_subdirectory(gwidi_server_client/test)
@@ -78,7 +79,7 @@ install(
 )
 
 install(
-        FILES ${linux_send_input_INCLUDE_DIRS}/LinuxSendInput.h
+        FILES ${udp_sendinput_INCLUDE_DIRS}/UdpSendInput.h
         DESTINATION ${INSTALL_HEADER_DEST}
 )
 

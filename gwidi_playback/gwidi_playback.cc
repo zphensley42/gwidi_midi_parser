@@ -5,7 +5,7 @@
 #include "WindowsSendInput.h"
 #define TEST_FILE R"(E:\Tools\repos\gwidi_midi_parser\assets\super_mario.mid)"
 #elif defined(__linux__)
-#include "LinuxSendInput.h"
+#include "UdpSendInput.h"
 
 //#define TEST_FILE R"(/home/zhensley/repos/gwidi_godot/gwidi_midi_parser/assets/test3_data.mid)"
 #define TEST_FILE R"(/home/zhensley/repos/gwidi_godot/gwidi_midi_parser/assets/slow_scale.mid)"

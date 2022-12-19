@@ -71,6 +71,29 @@ void GwidiServerClient::sendWatchedKeysReconfig(const std::vector<int>& watchedK
     spdlog::info("Sent {} bytes of data", bytesSent);
 }
 
+void GwidiServerClient::sendKeyInputEvent(const std::string &key) {
+    auto toIp = ipForSin(m_toAddr);
+
+    char* buffer = new char[1024];
+    memset(buffer, '\0', sizeof(char) * 1024);
+
+    std::size_t bufferOffset = 0;
+
+    int msg_type = static_cast<int>(ServerEventType::EVENT_SENDINPUT);
+    memcpy(buffer + bufferOffset, &msg_type, sizeof(int));
+    bufferOffset += sizeof(int);
+
+    std::size_t keySize = key.size();
+    memcpy(buffer + bufferOffset, &keySize, sizeof(std::size_t));
+    bufferOffset += sizeof(std::size_t);
+
+    memcpy(buffer + bufferOffset, &(key[0]), sizeof(char) * keySize);
+    bufferOffset += sizeof(char) * keySize;
+
+    auto bytesSent = sendto(sockfd, buffer, 1024, 0, (struct sockaddr*)&m_toAddr, sizeof(m_toAddr));
+    spdlog::info("Sent {} bytes of data", bytesSent);
+}
+
 void GwidiServerClient::markReceived() {
     m_receivedHello = true;
     while(!m_watchedKeysReconfigQueue.empty()) {
@@ -194,6 +217,14 @@ void GwidiServerListener::sendWatchedKeysReconfig(const std::vector<int>& watche
         }
         else {
             m_socketClient->queueWatchedKeysReconfig(watchedKeys);
+        }
+    }
+}
+
+void GwidiServerListener::sendKeyInputEvent(const std::string& key) {
+    if(m_socketClient) {
+        if (m_socketClient->isReceived()) {
+            m_socketClient->sendKeyInputEvent(key);
         }
     }
 }
